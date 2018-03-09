@@ -1,0 +1,30 @@
+version: '3.1'
+
+services:
+    mysql:
+        container_name: $MYSQL_CONTAINER
+        image: $MYSQL_IMAGE
+        environment:
+            MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+            MYSQL_DATABASE: $MYSQL_DATABASE
+            LANG: C.UTF-8
+        volumes:
+            - "./data/db/mysql:/var/lib/mysql"
+            - "./mysql-init-script:/docker-entrypoint-initdb.d"
+            - "./log/mysql/error.log:/var/log/mysql/error.log"
+        ports: [ $MYSQL_PORT_MAP ]
+    webapp:
+        container_name: $APP_CONTAINER
+        image: $APP_IMAGE
+        ports: [ $APP_PORT_MAP ]
+        volumes:
+            - "./src/$APP_ROOT:/var/www/html/"
+            - "./log/apache2/access.log:/var/log/apache2/access.log"
+            - "./log/apache2/error.log:/var/log/apache2/error.log"
+        environment:
+            MYSQL_PASSWORD: $MYSQL_ROOT_PASSWORD
+            MYSQL_USERNAME: "root"
+            MYSQL_DATABASE: $MYSQL_DATABASE
+            MYSQL_HOST: $MYSQL_CONTAINER
+        depends_on:
+            - mysql
