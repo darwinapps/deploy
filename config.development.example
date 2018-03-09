@@ -1,14 +1,16 @@
 PROJECT="cerius"
 REPOSITORY="git@github.com:darwinapps/CeriusWordpress.git"
-BUCKET="darwinapps-clari.web"
+BUCKET="darwinapps-ceriusexecutives-wp.web"
+AWS_REGION="us-east-1"
+AWS_ACCESS_KEY_ID="AKIAJVJHK5PLGBWFVZ2A"
+AWS_SECRET_ACCESS_KEY="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"
 
-#MYSQL_DOCKERFILE=Dockerfile.mysql
 MYSQL_IMAGE="mysql:5.6"
 MYSQL_PORT_MAP="'3306:3306'"
 APP_DOCKERFILE="Dockerfile.app"
-#APP_IMAGE="php:7.0-apache"
 APP_ROOT="" # for ./src/ being the  root
 APP_PORT_MAP="'80:80'"
 
-MYSQL_ROOT_PASSWORD=123
+MYSQL_USER=wordpress
+MYSQL_PASSWORD=123
 MYSQL_DATABASE=wordpress

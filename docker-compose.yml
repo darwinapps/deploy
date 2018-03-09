@@ -5,7 +5,9 @@ services:
         container_name: $MYSQL_CONTAINER
         image: $MYSQL_IMAGE
         environment:
-            MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+            MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+            MYSQL_USER: $MYSQL_USER
+            MYSQL_PASSWORD: $MYSQL_PASSWORD
             MYSQL_DATABASE: $MYSQL_DATABASE
             LANG: C.UTF-8
         volumes:
@@ -23,7 +25,7 @@ services:
             - "./log/apache2/error.log:/var/log/apache2/error.log"
         environment:
             MYSQL_PASSWORD: $MYSQL_ROOT_PASSWORD
-            MYSQL_USERNAME: "root"
+            MYSQL_USER: $MYSQL_USER
             MYSQL_DATABASE: $MYSQL_DATABASE
             MYSQL_HOST: $MYSQL_CONTAINER
         depends_on:
