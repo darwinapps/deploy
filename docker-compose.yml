@@ -5,7 +5,7 @@ services:
         container_name: $MYSQL_CONTAINER
         image: $MYSQL_IMAGE
         environment:
-            MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+            MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
             MYSQL_USER: $MYSQL_USER
             MYSQL_PASSWORD: $MYSQL_PASSWORD
             MYSQL_DATABASE: $MYSQL_DATABASE
@@ -28,5 +28,6 @@ services:
             MYSQL_USER: $MYSQL_USER
             MYSQL_DATABASE: $MYSQL_DATABASE
             MYSQL_HOST: $MYSQL_CONTAINER
+            LANG: C.UTF-8
         depends_on:
             - mysql
