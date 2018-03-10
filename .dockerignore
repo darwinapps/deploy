@@ -1,5 +1,5 @@
-/src/
-/log/
-/data/
-/mysql-init-script/
 /.git/
+/data/
+/log/
+/mysql-init-script/
+/src/

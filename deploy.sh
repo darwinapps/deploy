@@ -43,24 +43,6 @@ function git_clone() {
     fi
 }
 
-#function configure_wordpress() {
-#        read -r -d '' SCRIPT <<- EOF
-#sed 's/\r//' < ./src/wp-config-sample.php | \
-#sed "s/define('DB_NAME'.*/define('DB_NAME', getenv('MYSQL_DATABASE'));/" | \
-#sed "s/define('DB_USER'.*/define('DB_NAME', getenv('MYSQL_USERNAME'));/" | \
-#sed "s/define('DB_PASSWORD'.*/define('DB_PASSWORD', getenv('MYSQL_PASSWORD'));/" | \
-#sed "s/define('DB_HOST'.*/define('DB_HOST', getenv('MYSQL_HOST'));/" | \
-#sed "/^\/\*.*stop editing.*\*\/$/i if (isset(\\\$_SERVER['HTTP_X_FORWARDED_PROTO']) && \\\$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {\n    \\\$_SERVER['HTTPS'] = 'on';\n}" | \
-#sed "/^\/\*.*stop editing.*\*\/$/i define( 'WP_HOME', 'http://' . \\\$_SERVER['HTTP_HOST'] . '/');" | \
-#sed "/^\/\*.*stop editing.*\*\/$/i define( 'WP_SITEURL', 'http://' . \\\$_SERVER['HTTP_HOST'] . '/');" > src/wp-config.php
-#EOF
-#
-#
-#    echo "$SCRIPT"
-#    echo $SCRIPT | docker run --rm -i -v "$PWD/src/:/src/" bash:latest 
-#    exit
-#}
-
 function display_usage {
     echo "Usage:"
     echo "    $0 ( development | staging ) ( prepare | up | down )"
@@ -83,12 +65,34 @@ MYSQL_CONTAINER="$PROJECT-$SUFFIX-mysql"
 APP_CONTAINER="$PROJECT-$SUFFIX-app"
 
 if [[ $MYSQL_DOCKERFILE ]]; then
+     if [[ ! -e $MYSQL_DOCKERFILE ]]; then
+         echo "MYSQL's Dockerfile '$MYSQL_DOCKERFILE' does not exist"
+         exit 1
+     fi
      MYSQL_IMAGE=$MYSQL_CONTAINER
 fi
 
 if [[ $APP_DOCKERFILE ]]; then
+     if [[ ! -e $APP_DOCKERFILE ]]; then
+         echo "App's Dockerfile '$APP_DOCKERFILE' does not exist"
+         exit 1
+     fi
      APP_IMAGE=$APP_CONTAINER
+else
+    if [[ -z $APP_IMAGE ]]; then
+        case $TYPE in
+            wordpress)
+                APP_DOCKERFILE="Dockerfile.wordpress"
+                APP_IMAGE=$APP_CONTAINER
+                ;;
+            *)
+                echo "Unsupported project type $TYPE"
+                exit 1
+                ;;
+        esac
+    fi
 fi
+
 
 if [[ -z $USERID ]]; then
     USERID=$(id -u)
@@ -132,13 +136,13 @@ case $2 in
         envsubst < docker-compose.yml | docker-compose -f - ${*:2}
         ;;
     up)
-        if [[ ! -e ./src/wp-config.php && -e ./src/wp-config-sample.php ]]; then
-            envsubst < docker-compose.yml | docker-compose -f - run --rm \
-                -v "$PWD/wordpress-setup.sh:/usr/bin/wordpress-setup.sh" \
-                -v "$PWD/src:/var/www/html" \
-                webapp bash /usr/bin/wordpress-setup.sh
-        fi
         envsubst < docker-compose.yml | docker-compose -f - ${*:2}
+        ;;
+    run)
+        envsubst < docker-compose.yml | docker-compose -f - run --rm webapp ${*:3}
+        ;;
+    exec)
+        envsubst < docker-compose.yml | docker-compose -f - exec webapp ${*:3}
         ;;
     *)
         display_usage
