@@ -80,7 +80,7 @@ if [[ $APP_DOCKERFILE ]]; then
      APP_IMAGE=$APP_CONTAINER
 else
     if [[ -z $APP_IMAGE ]]; then
-        case $TYPE in
+        case $APP_TYPE in
             wordpress)
                 APP_DOCKERFILE="Dockerfile.wordpress"
                 APP_IMAGE=$APP_CONTAINER
