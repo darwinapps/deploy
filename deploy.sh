@@ -1,12 +1,8 @@
 #!/bin/bash
 
 
-function get_latest_db_dump() {
-    BUCKET=$1
-    FILENAME=${2:-latest.sql.gz}
-    if [[ ! -f mysql-init-script/latest.sql.gz ]]; then
-        echo "Building AWS CLI image..."
-        read -d '' DOCKERFILE <<EOF
+function get_aws_cli() {
+    read -d '' DOCKERFILE <<EOF
 FROM alpine:latest
 
 ENV PAGER='cat'
@@ -23,8 +19,14 @@ RUN pip install --upgrade pip && \
 
 EOF
 
-        echo "$DOCKERFILE" | docker build -f - .
-        AWSID=$(echo "$DOCKERFILE" | docker build -f - . -q)
+    echo "$DOCKERFILE" | docker build -f - . -q
+}
+
+function get_latest_db_dump() {
+    BUCKET=$1
+    FILENAME=${2:-latest.sql.gz}
+    if [[ ! -f mysql-init-script/latest.sql.gz ]]; then
+        AWSID=$(get_aws_cli)
         echo "Downloading database dump from AWS..."
         docker run --rm -it -v "$PWD/mysql-init-script/:/mysql-init-script/" \
              -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
@@ -33,6 +35,20 @@ EOF
              $AWSID \
                  aws s3 cp s3://$BUCKET/$FILENAME /mysql-init-script/$FILENAME
     fi
+}
+
+function upload_dump() {
+    BUCKET=$1
+    FILENAME=$2
+    AWSID=$(get_aws_cli)
+    echo "Uploading $FILENAME to AWS..."
+
+    docker run --rm -it -v "$PWD/backup/:/backup/" \
+             -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+             -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+             -e AWS_DEFAULT_REGION=$AWS_REGION \
+             $AWSID \
+                 aws s3 cp /backup/$FILENAME s3://$BUCKET/$FILENAME
 }
 
 function git_clone() {
@@ -143,6 +159,22 @@ case $2 in
         ;;
     exec)
         envsubst < docker-compose.yml | docker-compose -f - exec webapp ${*:3}
+        ;;
+    mysqldump|backup)
+        if [[ ! -d backup ]]; then
+            mkdir backup
+        fi 
+        FILENAME=$MYSQL_CONTAINER-$(date +%Y-%m-%d.%H:%M:%S).sql.gz
+        if [[ $(docker ps -f id=$(envsubst < docker-compose.yml | docker-compose -f - ps -q mysql) -q) != ""  ]]; then
+            envsubst < docker-compose.yml | docker-compose -f - exec -T mysql mysqldump -uroot $MYSQL_DATABASE | gzip - > backup/$FILENAME
+        else
+            echo "MYSQL container is not running"
+            exit 1
+        fi
+        
+        if [[ $2 == "backup" ]]; then
+            upload_dump $BUCKET $FILENAME
+        fi
         ;;
     *)
         display_usage
