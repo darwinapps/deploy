@@ -74,7 +74,17 @@ function display_usage {
 
 set -a
 
+USERID=$(id -u)
+GROUPID=$(id -g)
+
+if [[ $USERID == "0" ]]; then
+    echo "Running as root is not supported. Please run the following command to add user to the docker group:"
+    echo "    \$ sudo usermod -aG docker \$USER"
+    exit 1;
+fi
+
 source ./config
+
 MYSQL_CONTAINER="$PROJECT-mysql"
 APP_CONTAINER="$PROJECT-app"
 
@@ -108,13 +118,6 @@ else
 fi
 
 
-if [[ -z $USERID ]]; then
-    USERID=$(id -u)
-fi
-
-if [[ -z $GROPID ]]; then
-    GROUPID=$(id -g)
-fi
 
 case $1 in
     prepare)
