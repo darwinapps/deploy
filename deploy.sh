@@ -49,6 +49,13 @@ function upload_dump() {
              -e AWS_DEFAULT_REGION=$AWS_REGION \
              $AWSID \
                  aws s3 cp /backup/$FILENAME s3://$BUCKET/$FILENAME
+
+    docker run --rm -it -v "$PWD/backup/:/backup/" \
+             -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+             -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+             -e AWS_DEFAULT_REGION=$AWS_REGION \
+             $AWSID \
+                 aws s3 cp /backup/$FILENAME s3://$BUCKET/latest.sql.gz
 }
 
 function git_clone() {
@@ -61,7 +68,7 @@ function git_clone() {
 
 function display_usage {
     echo "Usage:"
-    echo "    $0 ( development | staging ) ( prepare | up | down )"
+    echo "    $0 ( development | staging ) ( prepare | up | down | mysqldump | upload )"
     exit 1;
 }
 
@@ -160,7 +167,7 @@ case $2 in
     exec)
         envsubst < docker-compose.yml | docker-compose -f - exec webapp ${*:3}
         ;;
-    mysqldump|backup)
+    mysqldump|upload)
         if [[ ! -d backup ]]; then
             mkdir backup
         fi 
@@ -171,8 +178,8 @@ case $2 in
             echo "MYSQL container is not running"
             exit 1
         fi
-        
-        if [[ $2 == "backup" ]]; then
+
+        if [[ $2 == "upload" ]]; then
             upload_dump $BUCKET $FILENAME
         fi
         ;;
