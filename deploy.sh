@@ -68,24 +68,15 @@ function git_clone() {
 
 function display_usage {
     echo "Usage:"
-    echo "    $0 ( development | staging ) ( prepare | up | down | mysqldump | upload )"
+    echo "    $0 ( prepare | up | down | mysqldump | upload )"
     exit 1;
 }
 
 set -a
 
-case $1 in
-    development|staging)
-        SUFFIX=$1
-        ;;
-    *)
-        display_usage
-        ;;
-esac
-
-source "config.$SUFFIX"
-MYSQL_CONTAINER="$PROJECT-$SUFFIX-mysql"
-APP_CONTAINER="$PROJECT-$SUFFIX-app"
+source ./config
+MYSQL_CONTAINER="$PROJECT-mysql"
+APP_CONTAINER="$PROJECT-app"
 
 if [[ $MYSQL_DOCKERFILE ]]; then
      if [[ ! -e $MYSQL_DOCKERFILE ]]; then
@@ -125,7 +116,7 @@ if [[ -z $GROPID ]]; then
     GROUPID=$(id -g)
 fi
 
-case $2 in
+case $1 in
     prepare)
         git_clone $REPOSITORY
         get_latest_db_dump $BUCKET
@@ -179,7 +170,7 @@ case $2 in
             exit 1
         fi
 
-        if [[ $2 == "upload" ]]; then
+        if [[ $1 == "upload" ]]; then
             upload_dump $BUCKET $FILENAME
         fi
         ;;
