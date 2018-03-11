@@ -147,16 +147,16 @@ case $1 in
 
         ;;
     down)
-        envsubst < docker-compose.yml | docker-compose -f - ${*:2}
+        envsubst < docker-compose.yml | docker-compose -f - $*
         ;;
     up)
-        envsubst < docker-compose.yml | docker-compose -f - ${*:2}
+        envsubst < docker-compose.yml | docker-compose -f - $*
         ;;
     run)
-        envsubst < docker-compose.yml | docker-compose -f - run --rm webapp ${*:3}
+        envsubst < docker-compose.yml | docker-compose -f - run --rm webapp ${*:2}
         ;;
     exec)
-        envsubst < docker-compose.yml | docker-compose -f - exec webapp ${*:3}
+        envsubst < docker-compose.yml | docker-compose -f - exec webapp ${*:2}
         ;;
     mysqldump|upload)
         if [[ ! -d backup ]]; then
@@ -173,6 +173,12 @@ case $1 in
         if [[ $1 == "upload" ]]; then
             upload_dump $BUCKET $FILENAME
         fi
+        ;;
+    clean)
+        cat .gitignore | grep -v 'src' | sed -e 's#^/#./#' | xargs rm -rf
+        ;;
+    realclean)
+        cat .gitignore | sed -e 's#^/#./#' | xargs rm -rf
         ;;
     *)
         display_usage
