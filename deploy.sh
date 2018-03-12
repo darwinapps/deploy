@@ -112,16 +112,12 @@ function upload_dump() {
                  aws s3 cp /backup/$FILENAME s3://$BUCKET/latest.sql.gz
 }
 
-function git_clone() {
-    if [[ ! -d src/ ]]; then
-        echo "Cloning $REPOSITORY"
-        if [[ $REPOSITORY_KEY != "" ]]; then
-            GIT=$(get_git_cli "$REPOSITORY_KEY")
-            #docker run -ti --rm -v $(pwd):/git -u $(id -u) -e GIT_SSH_COMMAND='ssh -i /id_rsa' $GIT clone $1 src/
-            docker run -ti --rm -v $(pwd):/git -e GIT_SSH_COMMAND='ssh -i /id_rsa' $GIT clone $1 src/
-        else
-            git clone $1 src/
-        fi
+function gitcmd() {
+    if [[ $REPOSITORY_KEY != "" ]]; then
+        GIT=$(get_git_cli "$REPOSITORY_KEY")
+        docker run -ti --rm -v $PWD:/git -e GIT_SSH_COMMAND='ssh -i /id_rsa' $GIT $*
+    else
+        git $*
     fi
 }
 
@@ -202,8 +198,9 @@ case $1 in
         fi
 
         get_latest_db_dump $BUCKET
-        git_clone $REPOSITORY
-
+        if [[ ! -d src/ ]]; then
+            gitcmd clone $REPOSITORY src/
+        fi
         ;;
     down)
         envsubst < docker-compose.yml | docker-compose -f - $*
@@ -234,6 +231,9 @@ case $1 in
         ;;
     exec)
         envsubst < docker-compose.yml | docker-compose -f - exec webapp ${*:2}
+        ;;
+    git)
+        gitcmd -C src/ ${*:2}
         ;;
     mysqldump|upload)
         if [[ ! -d backup ]]; then
