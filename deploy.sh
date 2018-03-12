@@ -147,6 +147,10 @@ source ./config
 MYSQL_CONTAINER="$PROJECT-mysql"
 APP_CONTAINER="$PROJECT-app"
 
+if [[ -z $MYSQL_IMAGE ]]; then
+     MYSQL_DOCKERFILE=${MYSQL_DOCKERFILE:-Dockerfile.mysql}
+fi
+
 if [[ $MYSQL_DOCKERFILE ]]; then
      if [[ ! -e $MYSQL_DOCKERFILE ]]; then
          echo "MYSQL's Dockerfile '$MYSQL_DOCKERFILE' does not exist"
