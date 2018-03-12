@@ -79,6 +79,9 @@ function get_latest_db_dump() {
     if [[ ! -f mysql-init-script/latest.sql.gz ]]; then
         AWSID=$(get_aws_cli)
         echo "Downloading database dump from AWS..."
+        if [[ ! -d mysql-init-script/ ]]; then
+            mkdir mysql-init-script/
+        fi
         docker run --rm -it -v "$PWD/mysql-init-script/:/mysql-init-script/" \
              -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
              -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
@@ -177,9 +180,6 @@ fi
 
 case $1 in
     prepare)
-        mkdir src/
-        mkdir mysql-init-script/
-        mkdir data/
 
         git_clone $REPOSITORY
         get_latest_db_dump $BUCKET
@@ -213,6 +213,9 @@ case $1 in
         envsubst < docker-compose.yml | docker-compose -f - $*
         ;;
     up)
+        if [[ ! -d data/db ]]; then
+            mkdir -p data/db/
+        fi
         envsubst < docker-compose.yml | docker-compose -f - $*
         ;;
     run)
