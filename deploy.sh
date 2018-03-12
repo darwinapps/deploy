@@ -115,10 +115,10 @@ function upload_dump() {
 function git_clone() {
     if [[ ! -d src/ ]]; then
         echo "Cloning $REPOSITORY"
-        mkdir src/
         if [[ $REPOSITORY_KEY != "" ]]; then
             GIT=$(get_git_cli "$REPOSITORY_KEY")
-            docker run -ti --rm -v $(pwd):/git -u $(id -u) -e GIT_SSH_COMMAND='ssh -i /id_rsa' $GIT clone $1 src/
+            #docker run -ti --rm -v $(pwd):/git -u $(id -u) -e GIT_SSH_COMMAND='ssh -i /id_rsa' $GIT clone $1 src/
+            docker run -ti --rm -v $(pwd):/git -e GIT_SSH_COMMAND='ssh -i /id_rsa' $GIT clone $1 src/
         else
             git clone $1 src/
         fi
@@ -181,12 +181,12 @@ fi
 case $1 in
     prepare)
 
-        git_clone $REPOSITORY
-        get_latest_db_dump $BUCKET
-
         if [[ $MYSQL_DOCKERFILE ]]; then
             envsubst < $MYSQL_DOCKERFILE | \
-                docker build -f - -t $MYSQL_IMAGE . || exit 1
+                docker build -f - \
+                    --build-arg USERID=$USERID \
+                    --build-arg GROUPID=$GROUPID \
+                    -t $MYSQL_IMAGE . || exit 1
         fi
 
         if [[ $APP_DOCKERFILE ]]; then
@@ -197,6 +197,17 @@ case $1 in
                     -t $APP_IMAGE . || exit 1
         fi
 
+        get_latest_db_dump $BUCKET
+        git_clone $REPOSITORY
+
+        ;;
+    down)
+        envsubst < docker-compose.yml | docker-compose -f - $*
+        ;;
+    up)
+        if [[ ! -d data/db ]]; then
+            mkdir -p data/db/
+        fi
         if [[ ! -d log/apache2 ]]; then
              mkdir -p log/apache2
         fi
@@ -207,16 +218,12 @@ case $1 in
         touch log/apache2/access.log
         touch log/apache2/error.log
         touch log/mysql/error.log
-
-        ;;
-    down)
-        envsubst < docker-compose.yml | docker-compose -f - $*
-        ;;
-    up)
-        if [[ ! -d data/db ]]; then
-            mkdir -p data/db/
+        if [[ -d src ]]; then
+            envsubst < docker-compose.yml | docker-compose -f - $*
+        else
+            display_usage
+            exit 1
         fi
-        envsubst < docker-compose.yml | docker-compose -f - $*
         ;;
     run)
         envsubst < docker-compose.yml | docker-compose -f - run --rm webapp ${*:2}
