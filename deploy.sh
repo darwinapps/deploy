@@ -179,6 +179,7 @@ case $1 in
     prepare)
         mkdir src/
         mkdir mysql-init-script/
+        mkdir data/
 
         git_clone $REPOSITORY
         get_latest_db_dump $BUCKET
