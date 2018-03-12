@@ -11,7 +11,6 @@ RUN useradd \
       --gid $GROUPID \
       --home-dir /var/www/html/ \
       mapped
-RUN chown -R mapped: /var/www/html/
 
 ENV APACHE_RUN_USER mapped
 ENV APACHE_RUN_GROUP mapped

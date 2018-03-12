@@ -22,6 +22,43 @@ EOF
     echo "$DOCKERFILE" | docker build -f - . -q
 }
 
+function get_git_cli() {
+    REPOSITORY_KEY=$(echo "$1" | sed -E ':a;N;$!ba;s/\r{0,1}\n/\\n/g')
+
+    DOCKERFILE="
+FROM debian:stable-slim
+
+ENV DEBIAN_FRONTEND noninteractive
+
+ARG USERID
+ARG GROUPID
+
+RUN groupadd -g \$GROUPID mapped || groupmod -n mapped \$(getent group \$GROUPID | cut -d: -f1)
+RUN useradd \
+      --uid \$USERID \
+      --gid \$GROUPID \
+      --home-dir /git \
+      mapped
+
+WORKDIR /git
+
+# install git
+RUN apt-get -y update && apt-get -y install git
+
+RUN echo -ne \"${REPOSITORY_KEY}\" > /id_rsa
+RUN chown mapped: /id_rsa
+RUN chmod 0600 /id_rsa
+
+USER mapped
+ENTRYPOINT [\"git\"]
+"
+
+    echo "$DOCKERFILE" | docker build -f - \
+        --build-arg USERID=$USERID \
+        --build-arg GROUPID=$GROUPID \
+        . -q
+}
+
 function get_latest_db_dump() {
     BUCKET=$1
     FILENAME=${2:-latest.sql.gz}
@@ -40,21 +77,21 @@ function get_latest_db_dump() {
 function upload_dump() {
     BUCKET=$1
     FILENAME=$2
-    AWSID=$(get_aws_cli)
+    AWSCLI=$(get_aws_cli)
     echo "Uploading $FILENAME to AWS..."
 
     docker run --rm -it -v "$PWD/backup/:/backup/" \
              -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
              -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
              -e AWS_DEFAULT_REGION=$AWS_REGION \
-             $AWSID \
+             $AWSCLI \
                  aws s3 cp /backup/$FILENAME s3://$BUCKET/$FILENAME
 
     docker run --rm -it -v "$PWD/backup/:/backup/" \
              -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
              -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
              -e AWS_DEFAULT_REGION=$AWS_REGION \
-             $AWSID \
+             $AWSCLI \
                  aws s3 cp /backup/$FILENAME s3://$BUCKET/latest.sql.gz
 }
 
@@ -62,7 +99,12 @@ function git_clone() {
     if [[ ! -d src/ ]]; then
         echo "Cloning $REPOSITORY"
         mkdir src/
-        git clone $1 src/
+        if [[ $REPOSITORY_KEY != "" ]]; then
+            GIT=$(get_git_cli "$REPOSITORY_KEY")
+            docker run -ti --rm -v $(pwd):/git -u $(id -u) -e GIT_SSH_COMMAND='ssh -i /id_rsa' $GIT clone $1 src/
+        else
+            git clone $1 src/
+        fi
     fi
 }
 
