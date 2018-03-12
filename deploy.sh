@@ -2,24 +2,38 @@
 
 
 function get_aws_cli() {
-    read -d '' DOCKERFILE <<EOF
-FROM alpine:latest
+    DOCKERFILE="
+FROM debian:stable-slim
 
-ENV PAGER='cat'
-ENV HOME=/
-WORKDIR $HOME
+ENV DEBIAN_FRONTEND noninteractive
 
-RUN apk add --update \
+ARG USERID
+ARG GROUPID
+
+RUN groupadd -g \$GROUPID mapped || groupmod -n mapped \$(getent group \$GROUPID | cut -d: -f1)
+RUN useradd \
+      --uid \$USERID \
+      --gid \$GROUPID \
+      --home-dir / \
+      mapped
+
+WORKDIR /
+
+RUN apt-get update && apt-get install -y \
     python \
-    groff \
-    py2-pip
+    wget
+    
+RUN wget https://bootstrap.pypa.io/get-pip.py && python get-pip.py
 
 RUN pip install --upgrade pip && \
     pip install awscli
 
-EOF
-
-    echo "$DOCKERFILE" | docker build -f - . -q
+USER mapped
+"
+    echo "$DOCKERFILE" | docker build -f - \
+        --build-arg USERID=$USERID \
+        --build-arg GROUPID=$GROUPID \
+        . -q
 }
 
 function get_git_cli() {
