@@ -37,7 +37,7 @@ USER mapped
 }
 
 function get_git_cli() {
-    REPOSITORY_KEY=$(echo "$1" | sed -E ':a;N;$!ba;s/\r{0,1}\n/\\n/g')
+    REPOSITORY_KEY=$(echo "$1" | perl -pe 's/\n/\\n/g')
 
     DOCKERFILE="
 FROM debian:stable-slim
