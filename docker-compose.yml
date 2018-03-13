@@ -20,7 +20,7 @@ services:
         image: $APP_IMAGE
         ports: [ $APP_PORT_MAP ]
         volumes:
-            - "./src/:/var/www/html/"
+            - "./webroot/:/var/www/html/"
             - "./log/apache2/access.log:/var/log/apache2/access.log"
             - "./log/apache2/error.log:/var/log/apache2/error.log"
         environment:
