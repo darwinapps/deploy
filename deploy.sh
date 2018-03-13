@@ -2,24 +2,38 @@
 
 
 function get_aws_cli() {
-    read -d '' DOCKERFILE <<EOF
-FROM alpine:latest
+    DOCKERFILE="
+FROM debian:stable-slim
 
-ENV PAGER='cat'
-ENV HOME=/
-WORKDIR $HOME
+ENV DEBIAN_FRONTEND noninteractive
 
-RUN apk add --update \
+ARG USERID
+ARG GROUPID
+
+RUN groupadd -g \$GROUPID mapped || groupmod -n mapped \$(getent group \$GROUPID | cut -d: -f1)
+RUN useradd \
+      --uid \$USERID \
+      --gid \$GROUPID \
+      --home-dir / \
+      mapped
+
+WORKDIR /
+
+RUN apt-get update && apt-get install -y \
     python \
-    groff \
-    py2-pip
+    wget
+    
+RUN wget https://bootstrap.pypa.io/get-pip.py && python get-pip.py
 
 RUN pip install --upgrade pip && \
     pip install awscli
 
-EOF
-
-    echo "$DOCKERFILE" | docker build -f - . -q
+USER mapped
+"
+    echo "$DOCKERFILE" | docker build -f - \
+        --build-arg USERID=$USERID \
+        --build-arg GROUPID=$GROUPID \
+        . -q
 }
 
 function get_git_cli() {
@@ -65,6 +79,9 @@ function get_latest_db_dump() {
     if [[ ! -f mysql-init-script/latest.sql.gz ]]; then
         AWSID=$(get_aws_cli)
         echo "Downloading database dump from AWS..."
+        if [[ ! -d mysql-init-script/ ]]; then
+            mkdir mysql-init-script/
+        fi
         docker run --rm -it -v "$PWD/mysql-init-script/:/mysql-init-script/" \
              -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
              -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
@@ -95,16 +112,12 @@ function upload_dump() {
                  aws s3 cp /backup/$FILENAME s3://$BUCKET/latest.sql.gz
 }
 
-function git_clone() {
-    if [[ ! -d src/ ]]; then
-        echo "Cloning $REPOSITORY"
-        mkdir src/
-        if [[ $REPOSITORY_KEY != "" ]]; then
-            GIT=$(get_git_cli "$REPOSITORY_KEY")
-            docker run -ti --rm -v $(pwd):/git -u $(id -u) -e GIT_SSH_COMMAND='ssh -i /id_rsa' $GIT clone $1 src/
-        else
-            git clone $1 src/
-        fi
+function gitcmd() {
+    if [[ $REPOSITORY_KEY != "" ]]; then
+        GIT=$(get_git_cli "$REPOSITORY_KEY")
+        docker run -ti --rm -v $PWD:/git -e GIT_SSH_COMMAND='ssh  -o "StrictHostKeyChecking no" -i /id_rsa' $GIT $*
+    else
+        git $*
     fi
 }
 
@@ -129,6 +142,10 @@ source ./config
 
 MYSQL_CONTAINER="$PROJECT-mysql"
 APP_CONTAINER="$PROJECT-app"
+
+if [[ -z $MYSQL_IMAGE ]]; then
+     MYSQL_DOCKERFILE=${MYSQL_DOCKERFILE:-Dockerfile.mysql}
+fi
 
 if [[ $MYSQL_DOCKERFILE ]]; then
      if [[ ! -e $MYSQL_DOCKERFILE ]]; then
@@ -163,12 +180,13 @@ fi
 
 case $1 in
     prepare)
-        git_clone $REPOSITORY
-        get_latest_db_dump $BUCKET
 
         if [[ $MYSQL_DOCKERFILE ]]; then
             envsubst < $MYSQL_DOCKERFILE | \
-                docker build -f - -t $MYSQL_IMAGE . || exit 1
+                docker build -f - \
+                    --build-arg USERID=$USERID \
+                    --build-arg GROUPID=$GROUPID \
+                    -t $MYSQL_IMAGE . || exit 1
         fi
 
         if [[ $APP_DOCKERFILE ]]; then
@@ -179,6 +197,18 @@ case $1 in
                     -t $APP_IMAGE . || exit 1
         fi
 
+        get_latest_db_dump $BUCKET
+        if [[ ! -d src/ ]]; then
+            gitcmd clone $REPOSITORY src/
+        fi
+        ;;
+    down)
+        envsubst < docker-compose.yml | docker-compose -f - $*
+        ;;
+    up)
+        if [[ ! -d data/db ]]; then
+            mkdir -p data/db/
+        fi
         if [[ ! -d log/apache2 ]]; then
              mkdir -p log/apache2
         fi
@@ -189,19 +219,21 @@ case $1 in
         touch log/apache2/access.log
         touch log/apache2/error.log
         touch log/mysql/error.log
-
-        ;;
-    down)
-        envsubst < docker-compose.yml | docker-compose -f - $*
-        ;;
-    up)
-        envsubst < docker-compose.yml | docker-compose -f - $*
+        if [[ -d src ]]; then
+            envsubst < docker-compose.yml | docker-compose -f - $*
+        else
+            display_usage
+            exit 1
+        fi
         ;;
     run)
         envsubst < docker-compose.yml | docker-compose -f - run --rm webapp ${*:2}
         ;;
     exec)
         envsubst < docker-compose.yml | docker-compose -f - exec webapp ${*:2}
+        ;;
+    git)
+        gitcmd -C src/ ${*:2}
         ;;
     mysqldump|upload)
         if [[ ! -d backup ]]; then
