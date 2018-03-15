@@ -123,7 +123,7 @@ function gitcmd() {
 
 function display_usage {
     echo "Usage:"
-    echo "    $0 ( prepare | up | down | mysqldump | upload )"
+    echo "    $0 ( prepare | up | down | ps | mysqldump | upload )"
     exit 1;
 }
 
@@ -194,6 +194,7 @@ case $1 in
                 docker build -f - \
                     --build-arg USERID=$USERID \
                     --build-arg GROUPID=$GROUPID \
+                    --build-arg PROJECT=$PROJECT \
                     -t $APP_IMAGE . || exit 1
         fi
 
