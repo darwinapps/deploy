@@ -194,7 +194,6 @@ case $1 in
                 docker build -f - \
                     --build-arg USERID=$USERID \
                     --build-arg GROUPID=$GROUPID \
-                    --build-arg PROJECT=$PROJECT \
                     -t $APP_IMAGE . || exit 1
         fi
 
