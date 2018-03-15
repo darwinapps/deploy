@@ -37,7 +37,7 @@ USER mapped
 }
 
 function get_git_cli() {
-    REPOSITORY_KEY=$(echo "$1" | sed -E ':a;N;$!ba;s/\r{0,1}\n/\\n/g')
+    REPOSITORY_KEY=$(echo "$1" | perl -pe 's/\n/\\n/g')
 
     DOCKERFILE="
 FROM debian:stable-slim
@@ -198,8 +198,8 @@ case $1 in
         fi
 
         get_latest_db_dump $BUCKET
-        if [[ ! -d src/ ]]; then
-            gitcmd clone $REPOSITORY src/
+        if [[ ! -d webroot/ ]]; then
+            gitcmd clone $REPOSITORY webroot/
         fi
         ;;
     down)
@@ -219,7 +219,7 @@ case $1 in
         touch log/apache2/access.log
         touch log/apache2/error.log
         touch log/mysql/error.log
-        if [[ -d src ]]; then
+        if [[ -d webroot/.git ]]; then
             envsubst < docker-compose.yml | docker-compose -f - $*
         else
             display_usage
@@ -233,7 +233,7 @@ case $1 in
         envsubst < docker-compose.yml | docker-compose -f - exec webapp ${*:2}
         ;;
     git)
-        gitcmd -C src/ ${*:2}
+        gitcmd -C webroot/ ${*:2}
         ;;
     mysqldump|upload)
         if [[ ! -d backup ]]; then
@@ -252,7 +252,7 @@ case $1 in
         fi
         ;;
     clean)
-        cat .gitignore | grep -v 'src' | sed -e 's#^/#./#' | xargs rm -rf
+        cat .gitignore | grep -v 'webroot' | sed -e 's#^/#.//#' | xargs rm -rf
         ;;
     realclean)
         cat .gitignore | sed -e 's#^/#./#' | xargs rm -rf
