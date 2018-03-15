@@ -198,7 +198,7 @@ case $1 in
         fi
 
         get_latest_db_dump $BUCKET
-        if [[ ! -d webroot/ ]]; then
+        if [[ ! -d webroot/.git ]]; then
             gitcmd clone $REPOSITORY webroot/
         fi
         ;;
