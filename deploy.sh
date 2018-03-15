@@ -226,6 +226,9 @@ case $1 in
             exit 1
         fi
         ;;
+    ps)
+        envsubst < docker-compose.yml | docker-compose -f - ps
+        ;;
     run)
         envsubst < docker-compose.yml | docker-compose -f - run --rm webapp ${*:2}
         ;;
