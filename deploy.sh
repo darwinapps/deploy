@@ -252,7 +252,7 @@ case $1 in
         fi
         ;;
     clean)
-        cat .gitignore | grep -v 'webroot' | sed -e 's#^/#./#' | xargs rm -rf
+        cat .gitignore | grep -v 'webroot' | sed -e 's#^/#.//#' | xargs rm -rf
         ;;
     realclean)
         cat .gitignore | sed -e 's#^/#./#' | xargs rm -rf
