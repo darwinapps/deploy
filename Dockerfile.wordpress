@@ -4,7 +4,6 @@ ENV DEBIAN_FRONTEND noninteractive
 
 ARG USERID
 ARG GROUPID
-ARG PROJECT
 
 RUN groupadd -g $GROUPID mapped || groupmod -n mapped $(getent group $GROUPID | cut -d: -f1)
 RUN useradd \
