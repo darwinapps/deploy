@@ -184,16 +184,12 @@ case $1 in
         if [[ $MYSQL_DOCKERFILE ]]; then
             envsubst < $MYSQL_DOCKERFILE | \
                 docker build -f - \
-                    --build-arg USERID=$USERID \
-                    --build-arg GROUPID=$GROUPID \
                     -t $MYSQL_IMAGE . || exit 1
         fi
 
         if [[ $APP_DOCKERFILE ]]; then
             envsubst < $APP_DOCKERFILE | \
                 docker build -f - \
-                    --build-arg USERID=$USERID \
-                    --build-arg GROUPID=$GROUPID \
                     -t $APP_IMAGE . || exit 1
         fi
 
