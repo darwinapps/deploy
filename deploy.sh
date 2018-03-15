@@ -199,7 +199,7 @@ case $1 in
         fi
         ;;
     down)
-        envsubst < docker-compose.yml | docker-compose -f - $*
+        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - $*
         ;;
     up)
         if [[ ! -d data/db ]]; then
@@ -216,20 +216,20 @@ case $1 in
         touch log/apache2/error.log
         touch log/mysql/error.log
         if [[ -d webroot/.git ]]; then
-            envsubst < docker-compose.yml | docker-compose -f - $*
+            envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - $*
         else
             display_usage
             exit 1
         fi
         ;;
     ps)
-        envsubst < docker-compose.yml | docker-compose -f - ps
+        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - ps
         ;;
     run)
-        envsubst < docker-compose.yml | docker-compose -f - run --rm webapp ${*:2}
+        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - run --rm webapp ${*:2}
         ;;
     exec)
-        envsubst < docker-compose.yml | docker-compose -f - exec webapp ${*:2}
+        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - exec webapp ${*:2}
         ;;
     git)
         gitcmd -C webroot/ ${*:2}
@@ -239,8 +239,8 @@ case $1 in
             mkdir backup
         fi 
         FILENAME=$MYSQL_CONTAINER-$(date +%Y-%m-%d.%H:%M:%S).sql.gz
-        if [[ $(docker ps -f id=$(envsubst < docker-compose.yml | docker-compose -f - ps -q mysql) -q) != ""  ]]; then
-            envsubst < docker-compose.yml | docker-compose -f - exec -T mysql mysqldump -uroot $MYSQL_DATABASE | gzip - > backup/$FILENAME
+        if [[ $(docker ps -f id=$(envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - ps -q mysql) -q) != ""  ]]; then
+            envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - exec -T mysql mysqldump -uroot $MYSQL_DATABASE | gzip - > backup/$FILENAME
         else
             echo "MYSQL container is not running"
             exit 1
