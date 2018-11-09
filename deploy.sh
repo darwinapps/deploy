@@ -3,7 +3,7 @@
 set -o pipefail
 
 function get_aws_cli() {
-    DOCKERFILE="
+    DOCKERFILE='
 FROM debian:stable-slim
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -11,10 +11,10 @@ ENV DEBIAN_FRONTEND noninteractive
 ARG USERID
 ARG GROUPID
 
-RUN groupadd -g \$GROUPID mapped || groupmod -n mapped \$(getent group \$GROUPID | cut -d: -f1)
+RUN groupadd -g $GROUPID mapped || groupmod -n mapped $(getent group $GROUPID | cut -d: -f1)
 RUN useradd \
-      --uid \$USERID \
-      --gid \$GROUPID \
+      --uid $USERID \
+      --gid $GROUPID \
       --home-dir / \
       mapped
 
@@ -30,7 +30,7 @@ RUN pip install --upgrade pip && \
     pip install awscli
 
 USER mapped
-"
+'
     echo "$DOCKERFILE" | docker build -f - \
         --build-arg USERID=$USERID \
         --build-arg GROUPID=$GROUPID \
@@ -75,7 +75,7 @@ ENTRYPOINT [\"git\"]
 }
 
 function get_terminus_cli() {
-    DOCKERFILE="
+    DOCKERFILE='
 FROM php:7.0-cli
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -83,10 +83,10 @@ ENV DEBIAN_FRONTEND noninteractive
 ARG USERID
 ARG GROUPID
 
-RUN groupadd -g \$GROUPID mapped || groupmod -n mapped \$(getent group \$GROUPID | cut -d: -f1)
+RUN groupadd -g $GROUPID mapped || groupmod -n mapped $(getent group $GROUPID | cut -d: -f1)
 RUN useradd \
-      --uid \$USERID \
-      --gid \$GROUPID \
+      --uid $USERID \
+      --gid $GROUPID \
       --home-dir / \
       mapped
 
@@ -101,7 +101,8 @@ RUN apt-get install -y \
 RUN curl -O https://raw.githubusercontent.com/pantheon-systems/terminus-installer/master/builds/installer.phar && php installer.phar install
 
 USER mapped
-"
+'
+
     echo "$DOCKERFILE" | docker build -f - \
         --build-arg USERID=$USERID \
         --build-arg GROUPID=$GROUPID \
@@ -118,6 +119,9 @@ function get_latest_db_dump_pantheon {
 function get_latest_files_from_pantheon {
     FILENAME=${1:-latest.tgz}
     if [[ ! -f remote-files/latest.tgz ]]; then
+        if [[ ! -d remote-files/ ]]; then
+            mkdir remote-files/
+        fi
         TERMINUSID=$(get_terminus_cli)
         docker run --rm -it -e HOME=/tmp -v "$PWD/remote-files/:/remote-files/" \
             $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading files ...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=files --to=/remote-files/latest.tgz"
@@ -222,60 +226,51 @@ fi
 source ./config
 
 MYSQL_CONTAINER="$PROJECT-mysql"
+MYSQL_IMAGE=$MYSQL_CONTAINER
+MYSQL_DOCKERFILE=${MYSQL_DOCKERFILE:-Dockerfile.mysql}
+
 APP_CONTAINER="$PROJECT-app"
+APP_IMAGE=$APP_CONTAINER
+APP_DOCKERFILES=("Dockerfile.app")
+if [[ -e "Dockerfile.${APP_TYPE}" ]]; then
+    APP_DOCKERFILES+=("Dockerfile.${APP_TYPE}")
+fi
 APACHE_DOCUMENT_ROOT=/var/www/html/${APP_ROOT%/}
 
-if [[ -z $MYSQL_IMAGE ]]; then
-     MYSQL_DOCKERFILE=${MYSQL_DOCKERFILE:-Dockerfile.mysql}
+DOCKER_COMPOSE_ARGS=("-f" "docker-compose.yml")
+
+if [[ $MYSQL_PORT_MAP ]]; then
+     DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-mysql.yml")
 fi
 
-if [[ -z $MYSQL_PORT_MAP ]]; then
-     MYSQL_PORT_MAP="'3306:3306'"
+if [[ $APP_PORT_MAP ]]; then
+     DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-app.yml")
 fi
 
-if [[ -z $APP_PORT_MAP ]]; then
-     APP_PORT_MAP="'80:80'"
-fi
-
-if [[ $MYSQL_DOCKERFILE ]]; then
-     if [[ ! -e $MYSQL_DOCKERFILE ]]; then
-         echo "MYSQL's Dockerfile '$MYSQL_DOCKERFILE' does not exist"
-         exit 1
-     fi
-     MYSQL_IMAGE=$MYSQL_CONTAINER
-fi
-
-if [[ $APP_DOCKERFILE ]]; then
-     if [[ ! -e $APP_DOCKERFILE ]]; then
-         echo "App's Dockerfile '$APP_DOCKERFILE' does not exist"
-         exit 1
-     fi
-     APP_IMAGE=$APP_CONTAINER
-else
-    if [[ -z $APP_IMAGE ]]; then
-        APP_DOCKERFILE="Dockerfile.${APP_TYPE}"
-        APP_IMAGE=$APP_CONTAINER
-        if [[ ! -e $APP_DOCKERFILE ]]; then
-            echo "Unsupported project type '$APP_TYPE'"
-            exit 1
-        fi
-    fi
+if [[ $APP_NETWORK ]]; then
+     DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-app-network.yml")
 fi
 
 case $1 in
     prepare)
         self_update "$@"
+
         if [[ $MYSQL_DOCKERFILE ]]; then
-            envsubst \$USERID,\$GROUPID,\$PROJECT,\$APACHE_DOCUMENT_ROOT < $MYSQL_DOCKERFILE | \
-                docker build -f - \
-                    -t $MYSQL_IMAGE . || exit 1
+            docker build \
+                --build-arg USERID=$USERID \
+                --build-arg GROUPID=$GROUPID \
+                -f $MYSQL_DOCKERFILE \
+                -t $MYSQL_IMAGE . || exit 1
         fi
 
-        if [[ $APP_DOCKERFILE ]]; then
-            envsubst \$USERID,\$GROUPID,\$PROJECT,\$APACHE_DOCUMENT_ROOT < $APP_DOCKERFILE | \
-                docker build -f - \
-                    -t $APP_IMAGE . || exit 1
-        fi
+        cat ${APP_DOCKERFILES[@]} | docker build \
+            --build-arg USERID=$USERID \
+            --build-arg GROUPID=$GROUPID \
+            --build-arg PROJECT=$PROJECT \
+            --build-arg APP_TYPE=$APP_TYPE \
+            --build-arg APACHE_DOCUMENT_ROOT=$APACHE_DOCUMENT_ROOT \
+            -f - \
+            -t $APP_IMAGE . || exit 1
 
         get_latest_db_dump
 
@@ -283,13 +278,14 @@ case $1 in
             get_latest_files_from_pantheon
         fi
 
-        if [[ ! -d webroot/.git ]]; then
-            gitcmd clone $REPOSITORY webroot/
+        if [[ $REPOSITORY ]] &&[[ ! -d webroot/.git ]]; then
+            gitcmd clone --recurse-submodules $REPOSITORY webroot/
+            (cd webroot/ && gitcmd submodule foreach git checkout master)
         fi
         extract_remote_files $FILES_DIR
         ;;
     down)
-        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - "$@"
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
         ;;
     up)
         self_update "$@"
@@ -309,23 +305,23 @@ case $1 in
         if [[ ! -d webroot/.git ]]; then
             echo "Content in your webroot is not tracked by git"
         fi
-        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - "$@"
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
         ;;
     status)
-        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - ps
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} ps
         ;;
     run)
-        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - run --no-deps --rm webapp "${@:2}"
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} run --no-deps --rm webapp "${@:2}"
         ;;
     exec)
-        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - exec webapp ${*:2}
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec webapp ${*:2}
         ;;
     git)
         gitcmd -C webroot/ ${*:2}
         ;;
     dump-database)
-        if [[ $(docker ps -f id=$(envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - ps -q mysql) -q) != ""  ]]; then
-            envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - exec -T mysql mysqldump -uroot $MYSQL_DATABASE
+        if [[ $(docker ps -f id=$(docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} ps -q mysql) -q) != ""  ]]; then
+            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec -T mysql mysqldump -uroot $MYSQL_DATABASE "${@:2}"
         else
             echo "MYSQL container is not running"
             exit 1
@@ -351,8 +347,8 @@ case $1 in
             mkdir backup
         fi 
         FILENAME=$MYSQL_CONTAINER-$(date +%Y-%m-%d.%H:%M:%S).sql.gz
-        if [[ $(docker ps -f id=$(envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - ps -q mysql) -q) != ""  ]]; then
-            envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - exec -T mysql mysqldump -uroot $MYSQL_DATABASE | gzip - > backup/$FILENAME
+        if [[ $(docker ps -f id=$(docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} ps -q mysql) -q) != ""  ]]; then
+            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec -T mysql mysqldump -uroot $MYSQL_DATABASE | gzip - > backup/$FILENAME
         else
             echo "MYSQL container is not running"
             exit 1
