@@ -183,6 +183,17 @@ EOPHP
 	for e in "${envs[@]}"; do
 		unset "$e"
 	done
+
+	phpini="/var/www/html/php.ini";
+	if [ ! -f $phpini -a ! -z "${DEBUG:-}" ]; then
+		echo -e "zend_extension=xdebug.so\n" \
+			"xdebug.remote_connect_back = 1\n" \
+			"xdebug.remote_enable = 1\n\n" \
+			"extension=runkit.so\n" \
+			"runkit.internal_override = 1\n\n" > $phpini
+		chown "$user:$group" $phpini;
+	fi
+
 fi
 
 exec "$@"
