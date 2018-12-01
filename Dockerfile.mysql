@@ -1,6 +1,8 @@
 ARG MYSQL_BASE_IMAGE
-
 FROM $MYSQL_BASE_IMAGE
+
+// MYSQL_BASE_IMAGE must be declared again after FROM
+ARG MYSQL_BASE_IMAGE
 
 ENV DEBIAN_FRONTEND noninteractive
 

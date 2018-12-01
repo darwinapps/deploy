@@ -1,6 +1,8 @@
 ARG APP_BASE_IMAGE
-
 FROM $APP_BASE_IMAGE
+
+// APP_BASE_IMAGE must be declared again after FROM
+ARG APP_BASE_IMAGE
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -15,8 +17,18 @@ RUN apt-get install -y --no-install-recommends \
 
 # NATIVE
 RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr
-RUN docker-php-ext-configure mcrypt
-RUN docker-php-ext-install -j$(nproc) gd mysqli pdo_mysql opcache mcrypt zip
+RUN docker-php-ext-install -j$(nproc) gd mysqli pdo_mysql opcache zip
+
+RUN \
+    if echo "${APP_BASE_IMAGE}" | egrep -q ^php:7.2-apache$; \
+    then \
+        pecl install channel://pecl.php.net/mcrypt-1.0.1; \
+        docker-php-ext-enable mcrypt; \
+    else \
+        docker-php-ext-configure mcrypt; \
+        docker-php-ext-install -j$(nproc) mcrypt; \
+    fi
+
 
 # RUNKIT
 RUN curl -sL https://github.com/runkit7/runkit7/releases/download/1.0.9/runkit-1.0.9.tgz > /tmp/runkit-1.0.9.tgz
