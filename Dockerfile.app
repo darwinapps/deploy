@@ -70,7 +70,7 @@ RUN (cd ~/ && (curl -s https://getcomposer.org/installer | php)) \
     && ln -sf ~/composer.phar /usr/bin/composer
 
 
-RUN curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar > /usr/bin/wp \
+RUN curl -s https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar > /usr/bin/wp \
     && chmod a+x /usr/bin/wp
 
 
