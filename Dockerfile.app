@@ -1,7 +1,7 @@
 ARG APP_BASE_IMAGE
 FROM $APP_BASE_IMAGE
 
-// APP_BASE_IMAGE must be declared again after FROM
+# APP_BASE_IMAGE must be declared again after FROM
 ARG APP_BASE_IMAGE
 
 ENV DEBIAN_FRONTEND noninteractive
