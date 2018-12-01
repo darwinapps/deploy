@@ -1,4 +1,6 @@
-FROM php:7.1-apache
+ARG APP_BASE_IMAGE
+
+FROM $APP_BASE_IMAGE
 
 ENV DEBIAN_FRONTEND noninteractive
 

@@ -228,10 +228,13 @@ source ./config
 MYSQL_CONTAINER="$PROJECT-mysql"
 MYSQL_IMAGE=$MYSQL_CONTAINER
 MYSQL_DOCKERFILE=${MYSQL_DOCKERFILE:-Dockerfile.mysql}
+MYSQL_BASE_IMAGE=${MYSQL_BASE_IMAGE:-mysql:5.6}
 
 APP_CONTAINER="$PROJECT-app"
 APP_IMAGE=$APP_CONTAINER
 APP_DOCKERFILES=("Dockerfile.app")
+APP_BASE_IMAGE=${APP_BASE_IMAGE:-php:7.2-apache}
+
 if [[ -e "Dockerfile.${APP_TYPE}" ]]; then
     APP_DOCKERFILES+=("Dockerfile.${APP_TYPE}")
 fi
@@ -257,6 +260,7 @@ case $1 in
 
         if [[ $MYSQL_DOCKERFILE ]]; then
             docker build \
+                --build-arg MYSQL_BASE_IMAGE=$MYSQL_BASE_IMAGE \
                 --build-arg USERID=$USERID \
                 --build-arg GROUPID=$GROUPID \
                 -f $MYSQL_DOCKERFILE \
@@ -264,6 +268,7 @@ case $1 in
         fi
 
         cat ${APP_DOCKERFILES[@]} | docker build \
+            --build-arg APP_BASE_IMAGE=$APP_BASE_IMAGE \
             --build-arg USERID=$USERID \
             --build-arg GROUPID=$GROUPID \
             --build-arg PROJECT=$PROJECT \
