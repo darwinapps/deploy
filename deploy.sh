@@ -280,7 +280,7 @@ case $1 in
 
         if [[ $REPOSITORY ]] &&[[ ! -d webroot/.git ]]; then
             gitcmd clone --recurse-submodules $REPOSITORY webroot/
-            (cd webroot/ && gitcmd submodule foreach git checkout master)
+            (cd webroot/ && gitcmd submodule update --init --recursive)
         fi
         extract_remote_files $FILES_DIR
         ;;

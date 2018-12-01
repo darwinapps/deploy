@@ -24,6 +24,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 	fi
 
 	settingsf="/var/www/html/sites/default/settings.php";
+	phpini="/var/www/html/php.ini";
 	if [ ! -f $settingsf ]; then
 		cp -a /var/www/html/sites/default/default.settings.php $settingsf
 		if [ ! -z "${DEBUG:-}" ]; then
@@ -42,6 +43,16 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		chown "$user:$group" $settingsf;
 	fi
 
+	if [ ! -f $phpini -a ! -z "${DEBUG:-}" ]; then
+		echo -e "zend_extension=xdebug.so\n" \
+			"xdebug.remote_connect_back = 1\n" \
+			"xdebug.remote_enable = 1\n\n" \
+			"extension=runkit.so\n" \
+			"runkit.internal_override = 1\n\n" > $phpini
+		chown "$user:$group" $phpini;
+	fi
+
 fi
+
 
 exec "$@"

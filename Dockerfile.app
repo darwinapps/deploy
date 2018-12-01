@@ -16,12 +16,16 @@ RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr
 RUN docker-php-ext-configure mcrypt
 RUN docker-php-ext-install -j$(nproc) gd mysqli pdo_mysql opcache mcrypt zip
 
+# RUNKIT
+RUN curl -sL https://github.com/runkit7/runkit7/releases/download/1.0.9/runkit-1.0.9.tgz > /tmp/runkit-1.0.9.tgz
+
 # PECL
-RUN pecl install geoip-1.1.1
+RUN pecl install geoip-1.1.1 xdebug /tmp/runkit-1.0.9.tgz
 RUN docker-php-ext-enable geoip
 
+
 RUN { \
-    echo 'opcache.memory_consumption=64'; \
+    echo 'opcache.memory_consumption=128'; \
     echo 'opcache.interned_strings_buffer=8'; \
     echo 'opcache.max_accelerated_files=4000'; \
     echo 'opcache.revalidate_freq=0'; \
@@ -89,5 +93,3 @@ ARG APACHE_DOCUMENT_ROOT
 
 RUN sed -ri -e "s!#ServerName .*!ServerName $PROJECT!" /etc/apache2/sites-enabled/000-default.conf
 RUN sed -ri -e "s!/var/www/html!${APACHE_DOCUMENT_ROOT}!g" /etc/apache2/apache2.conf /etc/apache2/sites-enabled/*.conf
-
-
