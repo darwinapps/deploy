@@ -13,8 +13,16 @@ RUN apt-get install -y --no-install-recommends \
     libjpeg-dev \
     libpng-dev \
     libgeoip-dev \
-    libmcrypt-dev
-
+    libmcrypt-dev \
+    git \
+    tcpdump \
+    telnet \
+    mysql-client \ 
+    net-tools \
+    nano \
+    zip \
+    gzip
+    
 # NATIVE
 RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr
 RUN docker-php-ext-install -j$(nproc) gd mysqli pdo_mysql opcache zip
