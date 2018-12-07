@@ -22,7 +22,8 @@ RUN apt-get install -y --no-install-recommends \
     nano \
     zip \
     gzip \
-    wget
+    wget \
+    ssh
     
 # NATIVE
 RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr
