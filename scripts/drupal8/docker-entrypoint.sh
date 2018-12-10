@@ -23,10 +23,10 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		group="$(id -g)"
 	fi
 
-	settingsf="/var/www/html/sites/default/settings.php";
+	settingsf="/var/www/html/${APP_ROOT}sites/default/settings.php";
 	phpini="/var/www/html/php.ini";
 	if [ ! -f $settingsf ]; then
-		cp -a /var/www/html/sites/default/default.settings.php $settingsf
+		cp -a /var/www/html/${APP_ROOT}sites/default/default.settings.php $settingsf
 		if [ ! -z "${DEBUG:-}" ]; then
 			echo -e "\$conf['theme_debug'] = TRUE;\n" >> $settingsf
 		fi
@@ -38,8 +38,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 			"  'host' => '${MYSQL_HOST}',\n" \
 			"  'collation' => 'utf8mb4_general_ci',\n" \
 			");\n\n" >> $settingsf
-		echo -e "\$settings['hash_salt'] = file_get_contents(__DIR__ . '/salt.txt');\n\n" >> $settingsf
-		echo "Dq7Y_ipY3UsSdf23q5VsQuJa2OIjuOicQ_zOumlF4gQsb9Hvh1WW_a5-55IskNO0GibY26aBKQ" > /var/www/html/sites/default/salt.txt
+		echo -e "\$settings['hash_salt'] = \"Dq7Y_ipY3UsSdf23q5VsQuJa2OIjuOicQ_zOumlF4gQsb9Hvh1WW_a5-55IskNO0GibY26aBKQ\";\n\n" >> $settingsf
 		chown "$user:$group" $settingsf;
 	fi
 
