@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# test
 
 set -o pipefail
 
@@ -116,6 +115,24 @@ function get_latest_db_dump_pantheon {
     TERMINUSID=$(get_terminus_cli)
     docker run --rm -it -e HOME=/tmp -v "$PWD/mysql-init-script/:/mysql-init-script/" \
         $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading database ...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=db --to=/mysql-init-script/latest.sql.gz"
+}
+
+function get_latest_files_from_aws() {
+    FILENAME=${1:-latest.tgz}
+    if [[ ! -f remote-files/latest.tgz ]]; then
+        if [[ ! -d remote-files/ ]]; then
+            mkdir remote-files/
+        fi
+		
+		AWSID=$(get_aws_cli)
+		echo "Downloading database dump from AWS..."
+		docker run --rm -it -v "$PWD/remote-files/:/remote-files/" \
+			-e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+			-e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+			-e AWS_DEFAULT_REGION=$AWS_REGION \
+			$AWSID \
+				aws s3 cp s3://$BUCKET/$FILENAME /remote-files/$FILENAME && tar -zxf /remote-files/$FILENAME /var/www/html
+	fi
 }
 
 function get_latest_files_from_pantheon {
@@ -339,6 +356,10 @@ case $1 in
         rm -rf mysql-init-script/
         get_latest_db_dump
         ;;
+    sync-s3-files)
+        rm -rf remote-files
+        get_latest_files_from_aws
+        ;;		
     sync-files)
         if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
             rm -rf remote-files/
