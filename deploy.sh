@@ -124,14 +124,16 @@ function get_latest_files_from_aws() {
             mkdir remote-files/
         fi
 		
-		AWSID=$(get_aws_cli)
-		echo "Downloading database dump from AWS..."
+        AWSID=$(get_aws_cli)
+        echo "Downloading database dump from AWS..."
+        docker run --rm -it -v "$PWD/remote-files/:/remote-files/" \
+            -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+            -e AWS_DEFAULT_REGION=$AWS_REGION \
+            $AWSID \
+			    aws s3 cp s3://$BUCKET/$FILENAME /remote-files/$FILENAME 
 		docker run --rm -it -v "$PWD/remote-files/:/remote-files/" \
-			-e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-			-e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-			-e AWS_DEFAULT_REGION=$AWS_REGION \
-			$AWSID \
-				aws s3 cp s3://$BUCKET/$FILENAME /remote-files/$FILENAME && tar -zxf /remote-files/$FILENAME /var/www/html
+            tar -zxf /remote-files/$FILENAME /var/www/html
 	fi
 }
 
