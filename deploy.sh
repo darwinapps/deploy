@@ -133,7 +133,8 @@ function get_latest_files_from_aws() {
             $AWSID \
 			    aws s3 cp s3://$BUCKET/$FILENAME /remote-files/$FILENAME 
 		docker run --rm -it -v "$PWD/remote-files/:/remote-files/" \
-            tar -zxf /remote-files/$FILENAME /var/www/html
+            $AWSID \
+                tar -zxf /remote-files/$FILENAME /var/www/html
 	fi
 }
 
