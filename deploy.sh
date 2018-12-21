@@ -125,7 +125,7 @@ function get_latest_files_from_aws() {
         fi
 		
         AWSID=$(get_aws_cli)
-        echo "Downloading database dump from AWS..."
+        echo "Downloading file from AWS..."
         docker run --rm -it -v "$PWD/remote-files/:/remote-files/" \
             -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
             -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
