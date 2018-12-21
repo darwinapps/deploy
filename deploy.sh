@@ -230,7 +230,7 @@ function self_update() {
 
 function display_usage {
     echo "Usage:"
-    echo "    $0 ( prepare | up | down | status | sync-database | sync-files | sync-files | dump-database )"
+    echo "    $0 ( prepare | up | down | status | sync-database | sync-files | dump-database )"
     exit 1;
 }
 
@@ -365,17 +365,13 @@ case $1 in
         get_latest_db_dump
         ;;
     sync-files)
-        rm -rf remote-files
-        get_latest_files_from_aws
-        ;;		
-    sync-files)
         if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
             rm -rf remote-files/
             get_latest_files_from_pantheon
             extract_remote_files $FILES_DIR
         else
-            echo "File sync is supported for pantheon.io only"
-            exit 1;
+            rm -rf remote-files/
+            get_latest_files_from_aws
         fi
         ;;
     upload)
