@@ -125,16 +125,15 @@ function get_latest_files_from_aws() {
         fi
 		
         AWSID=$(get_aws_cli)
-        echo "Downloading file from AWS..."
+        echo "Downloading files from AWS..."
         docker run --rm -it -v "$PWD/remote-files/:/remote-files/" \
             -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
             -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
             -e AWS_DEFAULT_REGION=$AWS_REGION \
             $AWSID \
 			    aws s3 cp s3://$BUCKET/$FILENAME /remote-files/$FILENAME 
-		docker run --rm -it -v "$PWD/remote-files/:/remote-files/" \
-            $AWSID \
-                tar -zxf /remote-files/$FILENAME /var/www/html
+
+		tar -zxf remote-files/$FILENAME -C webroot/
 	fi
 }
 
@@ -229,7 +228,7 @@ function self_update() {
 
 function display_usage {
     echo "Usage:"
-    echo "    $0 ( prepare | up | down | status | sync-database | sync-files | dump-database )"
+    echo "    $0 ( prepare | up | down | status | sync-database | sync-s3-files | sync-files | dump-database )"
     exit 1;
 }
 
