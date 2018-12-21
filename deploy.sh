@@ -119,7 +119,7 @@ function get_latest_db_dump_pantheon {
 
 function get_latest_files_from_aws() {
     FILENAME=${1:-files.tgz}
-    if [[ ! -f remote-files/files.tgz ]]; then
+    if [[ ! -f remote-files/latest.tgz ]]; then
         if [[ ! -d remote-files/ ]]; then
             mkdir remote-files/
         fi
