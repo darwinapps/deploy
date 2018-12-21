@@ -304,6 +304,8 @@ case $1 in
 
         if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
             get_latest_files_from_pantheon
+        else
+            get_latest_files_from_aws
         fi
 
         if [[ $REPOSITORY ]] &&[[ ! -d webroot/.git ]]; then
@@ -312,9 +314,6 @@ case $1 in
         fi
         extract_remote_files $FILES_DIR
 
-        rm -rf remote-files
-        get_latest_files_from_aws		
-		
         ;;
     down)
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
