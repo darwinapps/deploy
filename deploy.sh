@@ -118,6 +118,8 @@ function get_latest_db_dump_pantheon {
 }
 
 function get_latest_files_from_aws() {
+    [[ -z $BUCKET ]] && return
+	
     FILENAME=${1:-files.tgz}
     if [[ ! -f remote-files/files.tgz ]]; then
         if [[ ! -d remote-files/ ]]; then
@@ -228,7 +230,7 @@ function self_update() {
 
 function display_usage {
     echo "Usage:"
-    echo "    $0 ( prepare | up | down | status | sync-database | sync-s3-files | sync-files | dump-database )"
+    echo "    $0 ( prepare | up | down | status | sync-database | sync-files | sync-files | dump-database )"
     exit 1;
 }
 
@@ -309,6 +311,10 @@ case $1 in
             (cd webroot/ && gitcmd submodule update --init --recursive)
         fi
         extract_remote_files $FILES_DIR
+
+        rm -rf remote-files
+        get_latest_files_from_aws		
+		
         ;;
     down)
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
@@ -358,7 +364,7 @@ case $1 in
         rm -rf mysql-init-script/
         get_latest_db_dump
         ;;
-    sync-s3-files)
+    sync-files)
         rm -rf remote-files
         get_latest_files_from_aws
         ;;		
