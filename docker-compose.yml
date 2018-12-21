@@ -28,6 +28,7 @@ services:
             MYSQL_USER: $MYSQL_USER
             MYSQL_DATABASE: $MYSQL_DATABASE
             MYSQL_HOST: $MYSQL_CONTAINER
+            WORDPRESS_TABLE_PREFIX: $WORDPRESS_TABLE_PREFIX
             LANG: C.UTF-8
             DEBUG: $DEBUG
         depends_on:

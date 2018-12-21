@@ -169,6 +169,7 @@ EOPHP
 
 		if [ "$WORDPRESS_TABLE_PREFIX" ]; then
 			set_config '$table_prefix' "$WORDPRESS_TABLE_PREFIX"
+			#sed -i "s|^\$table_prefix.*=.*$|\$table_prefix = '$WORDPRESS_TABLE_PREFIX'|" wp-config.php
 		fi
 
 		if [ "$WORDPRESS_DEBUG" ]; then
