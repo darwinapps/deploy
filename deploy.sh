@@ -118,14 +118,12 @@ function get_latest_db_dump_pantheon {
 }
 
 function get_latest_files_from_aws() {
-    [[ -z $BUCKET ]] && return
-	
     FILENAME=${1:-files.tgz}
     if [[ ! -f remote-files/files.tgz ]]; then
         if [[ ! -d remote-files/ ]]; then
             mkdir remote-files/
         fi
-		
+
         AWSID=$(get_aws_cli)
         echo "Downloading files from AWS..."
         docker run --rm -it -v "$PWD/remote-files/:/remote-files/" \
@@ -133,10 +131,8 @@ function get_latest_files_from_aws() {
             -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
             -e AWS_DEFAULT_REGION=$AWS_REGION \
             $AWSID \
-			    aws s3 cp s3://$BUCKET/$FILENAME /remote-files/$FILENAME 
-
-		tar -zxf remote-files/$FILENAME -C webroot/
-	fi
+                aws s3 cp s3://$BUCKET/$FILENAME /remote-files/latest.tgz
+    fi
 }
 
 function get_latest_files_from_pantheon {
@@ -208,9 +204,8 @@ function gitcmd() {
 
 function extract_remote_files() {
     DIR=$1
-    STRIP=${2:-1}
+    STRIP=${2:0}
     if [[ -f remote-files/latest.tgz ]] && [[ $DIR ]] && [[ -d webroot/$DIR || -d $(dirname webroot/$DIR) ]]; then
-        mkdir -p webroot/$DIR
         tar xf remote-files/latest.tgz -C webroot/$DIR --strip-components=$STRIP
     fi
 }
@@ -304,7 +299,7 @@ case $1 in
 
         if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
             get_latest_files_from_pantheon
-        else
+        elif [[ $FILES_DIR ]]; then
             get_latest_files_from_aws
         fi
 
@@ -312,8 +307,8 @@ case $1 in
             gitcmd clone --recurse-submodules $REPOSITORY webroot/
             (cd webroot/ && gitcmd submodule update --init --recursive)
         fi
-        extract_remote_files $FILES_DIR
 
+        extract_remote_files $FILES_DIR
         ;;
     down)
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
@@ -367,10 +362,11 @@ case $1 in
         if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
             rm -rf remote-files/
             get_latest_files_from_pantheon
-            extract_remote_files $FILES_DIR
-        else
+            extract_remote_files $FILES_DIR -1
+        elif [[ $FILES_DIR ]]; then
             rm -rf remote-files/
             get_latest_files_from_aws
+            extract_remote_files $FILES_DIR
         fi
         ;;
     upload)
