@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 set -o pipefail
 
 function get_aws_cli() {
@@ -114,6 +115,28 @@ function get_latest_db_dump_pantheon {
     TERMINUSID=$(get_terminus_cli)
     docker run --rm -it -e HOME=/tmp -v "$PWD/mysql-init-script/:/mysql-init-script/" \
         $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading database ...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=db --to=/mysql-init-script/latest.sql.gz"
+}
+
+function get_latest_files_from_aws() {
+    [[ -z $BUCKET ]] && return
+	
+    FILENAME=${1:-files.tgz}
+    if [[ ! -f remote-files/files.tgz ]]; then
+        if [[ ! -d remote-files/ ]]; then
+            mkdir remote-files/
+        fi
+		
+        AWSID=$(get_aws_cli)
+        echo "Downloading files from AWS..."
+        docker run --rm -it -v "$PWD/remote-files/:/remote-files/" \
+            -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+            -e AWS_DEFAULT_REGION=$AWS_REGION \
+            $AWSID \
+			    aws s3 cp s3://$BUCKET/$FILENAME /remote-files/$FILENAME 
+
+		tar -zxf remote-files/$FILENAME -C webroot/
+	fi
 }
 
 function get_latest_files_from_pantheon {
@@ -281,6 +304,8 @@ case $1 in
 
         if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
             get_latest_files_from_pantheon
+        else
+            get_latest_files_from_aws
         fi
 
         if [[ $REPOSITORY ]] &&[[ ! -d webroot/.git ]]; then
@@ -288,6 +313,7 @@ case $1 in
             (cd webroot/ && gitcmd submodule update --init --recursive)
         fi
         extract_remote_files $FILES_DIR
+
         ;;
     down)
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
@@ -343,8 +369,8 @@ case $1 in
             get_latest_files_from_pantheon
             extract_remote_files $FILES_DIR
         else
-            echo "File sync is supported for pantheon.io only"
-            exit 1;
+            rm -rf remote-files/
+            get_latest_files_from_aws
         fi
         ;;
     upload)
