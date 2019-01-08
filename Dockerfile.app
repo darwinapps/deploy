@@ -74,7 +74,7 @@ RUN { \
 } > /usr/local/etc/php/conf.d/php.ini
 
 RUN a2enmod rewrite expires
-RUN mkdir -p /usr/share/GeoIP/ && curl -s http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz | gunzip - > /usr/share/GeoIP/GeoIPCity.dat
+RUN mkdir -p /usr/share/GeoIP/ && curl -s https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz | tar -zx --wildcards --no-anchored '*\/GeoLite2-City.mmdb' --to-stdout > /usr/share/GeoIP/GeoIPCity.dat
 
 RUN (cd ~/ && (curl -s https://getcomposer.org/installer | php)) \
     && ln -sf ~/composer.phar /usr/bin/composer
