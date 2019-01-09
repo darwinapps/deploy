@@ -277,23 +277,21 @@ case $1 in
         self_update "$@"
 
         if [[ $MYSQL_DOCKERFILE ]]; then
-            docker build \
+            docker --log-level "error" build \
                 --build-arg MYSQL_BASE_IMAGE=$MYSQL_BASE_IMAGE \
                 --build-arg USERID=$USERID \
                 --build-arg GROUPID=$GROUPID \
-                --log-level "error" \
                 -f $MYSQL_DOCKERFILE \
                 -t $MYSQL_IMAGE . || exit 1
         fi
 
-        cat ${APP_DOCKERFILES[@]} | docker build \
+        cat ${APP_DOCKERFILES[@]} | docker --log-level "error" build \
             --build-arg APP_BASE_IMAGE=$APP_BASE_IMAGE \
             --build-arg USERID=$USERID \
             --build-arg GROUPID=$GROUPID \
             --build-arg PROJECT=$PROJECT \
             --build-arg APP_TYPE=$APP_TYPE \
             --build-arg APACHE_DOCUMENT_ROOT=$APACHE_DOCUMENT_ROOT \
-            --log-level "error" \
             -f - \
             -t $APP_IMAGE . || exit 1
 
