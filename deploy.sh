@@ -281,6 +281,7 @@ case $1 in
                 --build-arg MYSQL_BASE_IMAGE=$MYSQL_BASE_IMAGE \
                 --build-arg USERID=$USERID \
                 --build-arg GROUPID=$GROUPID \
+                --log-level "error" \
                 -f $MYSQL_DOCKERFILE \
                 -t $MYSQL_IMAGE . || exit 1
         fi
@@ -292,6 +293,7 @@ case $1 in
             --build-arg PROJECT=$PROJECT \
             --build-arg APP_TYPE=$APP_TYPE \
             --build-arg APACHE_DOCUMENT_ROOT=$APACHE_DOCUMENT_ROOT \
+            --log-level "error" \
             -f - \
             -t $APP_IMAGE . || exit 1
 
