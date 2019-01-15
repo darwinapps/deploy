@@ -315,7 +315,7 @@ case $1 in
             (cd webroot/ && gitcmd submodule update --init --recursive)
         fi
 
-        extract_remote_files $FILES_DIR
+        extract_remote_files $FILES_DIR $( [[ $PANTHEON_SITE_NAME ]] && echo 1 )
         ;;
     down)
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
