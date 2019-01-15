@@ -315,16 +315,6 @@ case $1 in
             (cd webroot/ && gitcmd submodule update --init --recursive)
         fi
 
-        extract_remote_files $FILES_DIR $( [[ $PANTHEON_SITE_NAME ]] && echo 1 )
-        ;;
-    down)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
-        ;;
-    up)
-        self_update "$@"
-        if [[ ! -d data/db ]]; then
-            mkdir -p data/db/
-        fi
         if [[ ! -d log/apache2 ]]; then
              mkdir -p log/apache2
         fi
@@ -335,6 +325,18 @@ case $1 in
         touch log/apache2/access.log
         touch log/apache2/error.log
         touch log/mysql/error.log
+	
+        extract_remote_files $FILES_DIR $( [[ $PANTHEON_SITE_NAME ]] && echo 1 )
+        ;;
+    down)
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
+        ;;
+    up)
+        self_update "$@"
+        if [[ ! -d data/db ]]; then
+            mkdir -p data/db/
+        fi
+	
         if [[ ! -d webroot/.git ]]; then
             echo "Content in your webroot is not tracked by git"
         fi
