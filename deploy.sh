@@ -205,7 +205,8 @@ function gitcmd() {
 function extract_remote_files() {
     DIR=$1
     STRIP=${2:0}
-    if [[ -f remote-files/latest.tgz ]] && [[ $DIR ]] && [[ ! -d webroot/$DIR ]] && $(mkdir -p webroot/$DIR); then
+    if [[ -f remote-files/latest.tgz ]] && [[ $DIR ]]; then
+    	[[ ! -d webroot/$DIR ]] && mkdir -p webroot/$DIR
 	echo "Unpacking files ..."
 	tar xf remote-files/latest.tgz -C webroot/$DIR $( [[ $STRIP -gt 0 ]] && echo "--strip-components=$STRIP" ) 
     else 
