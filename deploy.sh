@@ -364,7 +364,7 @@ case $1 in
         if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
             rm -rf remote-files/
             get_latest_files_from_pantheon
-            extract_remote_files $FILES_DIR -1
+            extract_remote_files $FILES_DIR 1
         elif [[ $FILES_DIR ]]; then
             rm -rf remote-files/
             get_latest_files_from_aws
