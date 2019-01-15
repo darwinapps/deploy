@@ -244,6 +244,8 @@ if [[ $USERID == "0" ]]; then
 fi
 
 
+[[ ! -f ./config ]] && echo "No config file found. Exiting ..." && exit 1;
+
 source ./config
 
 [[ -z "${WORDPRESS_TABLE_PREFIX}" ]] && WORDPRESS_TABLE_PREFIX=""
