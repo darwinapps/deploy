@@ -25,5 +25,5 @@ RUN pecl install imagick
 RUN docker-php-ext-enable imagick
 
 RUN (cd ~/ && (curl -s https://getcomposer.org/installer | php)) \
-    && ln -sf ~/composer.phar /usr/bin/composer \
+    && mv ~/composer.phar /usr/bin/composer \
     && composer global require "fxp/composer-asset-plugin:~1.1.2" --no-plugins
