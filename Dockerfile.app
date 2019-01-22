@@ -79,7 +79,7 @@ RUN mkdir -p /usr/share/GeoIP/ && gunzip -c /tmp/GeoLiteCity.dat.gz > /usr/share
 #&& curl -sL --output - https://github.com/darwinapps/deploy/raw/master/geoip/GeoLiteCity.dat.gz | gunzip - > /usr/share/GeoIP/GeoIPCity.dat
 
 RUN (cd ~/ && (curl -s https://getcomposer.org/installer | php)) \
-    && ln -sf ~/composer.phar /usr/bin/composer
+    && mv ~/composer.phar /usr/bin/composer
 
 
 RUN curl -s https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar > /usr/bin/wp \
