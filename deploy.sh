@@ -345,7 +345,7 @@ case $1 in
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} ps
         ;;
     run)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} run --no-deps --rm webapp su mapped -c "${@:2}"
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} run --no-deps --rm webapp su mapped -c "${*:2}"
         ;;
     su-run)
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} run --no-deps --rm webapp "${@:2}"
