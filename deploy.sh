@@ -206,11 +206,9 @@ function extract_remote_files() {
     DIR=$1
     STRIP=${2:0}
     if [[ -f remote-files/latest.tgz ]] && [[ $DIR ]]; then
-    	[[ ! -d webroot/$DIR ]] && mkdir -p webroot/$DIR
-	echo "Unpacking files ..."
-	tar xf remote-files/latest.tgz -C webroot/$DIR $( [[ $STRIP -gt 0 ]] && echo "--strip-components=$STRIP" ) 
-    else 
-	echo "Can not unpack files."
+        [[ ! -d webroot/$DIR ]] && mkdir -p webroot/$DIR
+        echo "Unpacking files ..."
+        tar xf remote-files/latest.tgz -C webroot/$DIR $( [[ $STRIP -gt 0 ]] && echo "--strip-components=$STRIP" ) 
     fi
 }
 
@@ -326,9 +324,8 @@ case $1 in
         touch log/apache2/access.log
         touch log/apache2/error.log
         touch log/mysql/error.log
-	if [[ ! -z $FILES_DIR ]]; then
-        	extract_remote_files $FILES_DIR $( [[ $PANTHEON_SITE_NAME ]] && echo 1 )
-	fi
+
+        extract_remote_files $FILES_DIR $( [[ $PANTHEON_SITE_NAME ]] && echo 1 )
         ;;
     down)
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
@@ -338,7 +335,7 @@ case $1 in
         if [[ ! -d data/db ]]; then
             mkdir -p data/db/
         fi
-	
+
         if [[ ! -d webroot/.git ]]; then
             echo "Content in your webroot is not tracked by git"
         fi
