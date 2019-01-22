@@ -22,6 +22,7 @@ RUN apt-get install -y --no-install-recommends \
     nano \
     zip \
     gzip \
+    unzip \
     wget \
     ssh
     
@@ -80,11 +81,6 @@ RUN mkdir -p /usr/share/GeoIP/ && gunzip -c /tmp/GeoLiteCity.dat.gz > /usr/share
 
 RUN (cd ~/ && (curl -s https://getcomposer.org/installer | php)) \
     && mv ~/composer.phar /usr/bin/composer
-
-
-RUN curl -s https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar > /usr/bin/wp \
-    && chmod a+x /usr/bin/wp
-
 
 # --- fixing user permissions
 
