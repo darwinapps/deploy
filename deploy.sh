@@ -394,10 +394,10 @@ case $1 in
         upload_dump $BUCKET $FILENAME
         ;;
     clean)
-        cat .gitignore | grep -v 'webroot' | sed -e 's#^/#.//#' | xargs rm -rf
+        cat .gitignore | grep -v 'webroot' | grep -v '/config' | sed -e 's#^/#.//#' | xargs rm -rf
         ;;
     realclean)
-        cat .gitignore | sed -e 's#^/#./#' | xargs rm -rf
+        cat .gitignore | sed -e 's#^/#./#' | grep -v '/config' | xargs rm -rf
         ;;
     *)
         display_usage
