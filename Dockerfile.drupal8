@@ -1,1 +1,16 @@
 RUN curl -sL https://github.com/drush-ops/drush-launcher/releases/download/0.6.0/drush.phar > /usr/local/bin/drush && chmod a+x /usr/local/bin/drush
+RUN echo "deb-src http://deb.debian.org/debian stretch main \n \
+deb-src http://security.debian.org/debian-security stretch/updates main \n \
+deb-src http://deb.debian.org/debian stretch-updates main \n \
+" >> /etc/apt/sources.list
+
+RUN cat /etc/apt/sources.list
+RUN apt-get update || apt-get update
+RUN apt upgrade -y ||  apt upgrade -y
+RUN apt install -y build-essential
+RUN apt build-dep -y imagemagick || apt build-dep -y imagemagick
+RUN wget https://www.imagemagick.org/download/ImageMagick.tar.gz
+RUN tar zxf ImageMagick.tar.gz
+RUN cd `ls | grep ImageMagick-7` && ls -lah &&  ./configure &&  make &&  make install
+RUN rm -rf ImageMagick*
+RUN ldconfig /usr/local/lib
