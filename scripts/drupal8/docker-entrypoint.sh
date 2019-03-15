@@ -38,6 +38,10 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 			"  'collation' => 'utf8mb4_general_ci',\n" \
 			");\n\n" >> $settingsf
 		echo -e "\$settings['hash_salt'] = \"Dq7Y_ipY3UsSdf23q5VsQuJa2OIjuOicQ_zOumlF4gQsb9Hvh1WW_a5-55IskNO0GibY26aBKQ\";\n\n" >> $settingsf
+
+		# WRI20X20-26
+		echo -e "\$settings['disable_captcha'] = true;\n\n" >> $settingsf
+		
 		chown "$user:$group" $settingsf;
 	fi
 
