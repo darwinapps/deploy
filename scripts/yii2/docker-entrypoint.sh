@@ -19,16 +19,16 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		group="$(id -g)"
 	fi
 	# FIXME files and folders created under root uid/gid. Should be created under user.
-	if [ ! -e protected/runtime ]; then
-		mkdir protected/runtime && chmod 777 protected/runtime
+	if [ ! -e runtime ]; then
+		mkdir runtime && chmod 777 runtime
 	fi
 	
-	if [ ! -e assets ]; then
-		mkdir assets && chmod 777 assets
+	if [ ! -e web/assets ]; then
+		mkdir web/assets && chmod 777 web/assets
 	fi	
 	
-	if [ ! -e protected/config/db.php ]; then
-		cat <<EOF > protected/config/db.php
+	if [ ! -e config/db.php ]; then
+		cat <<EOF > config/db.php
 <?php
 return array {
     'connectionString' => 'mysql:host=${MYSQL_HOST};dbname=${MYSQL_DATABASE}',
@@ -41,8 +41,8 @@ return array {
 EOF
 	fi
 	
-	if [ ! -e protected/config/environment.php ]; then
-		cat <<EOF > protected/config/environment.php
+	if [ ! -e config/environment.php ]; then
+		cat <<EOF > config/environment.php
 <?php
 // this var will include proper config (main_local.php)
 
