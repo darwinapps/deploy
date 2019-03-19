@@ -5,8 +5,8 @@ FROM $APP_BASE_IMAGE
 ARG APP_BASE_IMAGE
 
 ENV DEBIAN_FRONTEND noninteractive
-
-RUN apt-get update
+RUN apt-get update || apt-get update
+RUN apt upgrade -y ||  apt upgrade -y
 RUN apt-get install -y --no-install-recommends apt-transport-https apt-utils gnupg
 RUN apt-get install -y --no-install-recommends \
     less \
