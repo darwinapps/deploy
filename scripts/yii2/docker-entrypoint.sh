@@ -30,14 +30,13 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 	if [ ! -e config/db.php ]; then
 		cat <<EOF > config/db.php
 <?php
-return array(
-    'connectionString' => 'mysql:host=${MYSQL_HOST};dbname=${MYSQL_DATABASE}',
-    'emulatePrepare' => true,   
+return [
+    'class' => 'yii\db\Connection',
+    'dsn' => 'mysql:host=${MYSQL_HOST};dbname=${MYSQL_DATABASE}',
     'username' => '${MYSQL_USER}',
     'password' => '${MYSQL_PASSWORD}',
     'charset' => 'utf8',
-    'enableParamLogging' => true,
-);
+];
 EOF
 	fi
 	
