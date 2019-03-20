@@ -7,7 +7,7 @@ ARG APP_BASE_IMAGE
 ARG PHP_SHORT_OPEN_TAG
 
 ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get install -y --no-install-recommends apt-transport-https apt-utils gnupg
+RUN apt-get install -y --no-install-recommends apt-transport-https gnupg
 RUN apt-get install -y --no-install-recommends \
     less \
     libjpeg-dev \
