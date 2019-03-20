@@ -285,6 +285,7 @@ case $1 in
         self_update "$@"
 
         if [[ $MYSQL_DOCKERFILE ]]; then
+            docker pull ${MYSQL_BASE_IMAGE}
             docker --log-level "error" build \
                 --build-arg MYSQL_BASE_IMAGE=$MYSQL_BASE_IMAGE \
                 --build-arg USERID=$USERID \
@@ -292,7 +293,7 @@ case $1 in
                 -f $MYSQL_DOCKERFILE \
                 -t $MYSQL_IMAGE . || exit 1
         fi
-
+        docker pull ${APP_BASE_IMAGE}
         cat ${APP_DOCKERFILES[@]} | docker --log-level "error" build \
             --build-arg APP_BASE_IMAGE=$APP_BASE_IMAGE \
             --build-arg USERID=$USERID \
