@@ -6,8 +6,6 @@ deb-src http://deb.debian.org/debian stretch-updates main \n \
 
 RUN cat /etc/apt/sources.list
 
-RUN apt-get update || apt-get update
-RUN apt upgrade -y || apt upgrade -y
 RUN apt install -y build-essential
 RUN apt build-dep -y imagemagick || apt build-dep -y imagemagick
 RUN wget https://www.imagemagick.org/download/ImageMagick.tar.gz
