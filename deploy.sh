@@ -249,6 +249,8 @@ source ./config
 
 [[ -z "${WORDPRESS_TABLE_PREFIX}" ]] && WORDPRESS_TABLE_PREFIX=""
 
+[[ -z "${PHP_SHORT_OPEN_TAG}" ]] && PHP_SHORT_OPEN_TAG="Off"
+
 MYSQL_CONTAINER="$PROJECT-mysql"
 MYSQL_IMAGE=$MYSQL_CONTAINER
 MYSQL_DOCKERFILE=${MYSQL_DOCKERFILE:-Dockerfile.mysql}
@@ -298,6 +300,7 @@ case $1 in
             --build-arg PROJECT=$PROJECT \
             --build-arg APP_TYPE=$APP_TYPE \
             --build-arg APACHE_DOCUMENT_ROOT=$APACHE_DOCUMENT_ROOT \
+            --build-arg PHP_SHORT_OPEN_TAG=$PHP_SHORT_OPEN_TAG \
             -f - \
             -t $APP_IMAGE . || exit 1
 
