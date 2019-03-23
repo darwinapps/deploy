@@ -61,7 +61,7 @@ RUN { \
 } > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 RUN { \
-    echo 'short_open_tag=$PHP_SHORT_OPEN_TAG'; \
+    echo 'short_open_tag=${PHP_SHORT_OPEN_TAG}'; \
     echo 'memory_limit=512M'; \
     echo 'post_max_size=6152M'; \
     echo 'upload_max_filesize=6144M'; \
