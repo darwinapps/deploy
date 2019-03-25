@@ -63,5 +63,6 @@ RUN { \
     echo 'export CRAFT_DB_USER="'$'MYSQL_USER"'; \
     echo 'export CRAFT_DB_PASSWORD="'$'MYSQL_PASSWORD"'; \
     echo 'export CRAFT_DB_NAME="'$'MYSQL_DATABASE"'; \
+    echo 'export CRAFT_DB_PORT="'$'MYSQL_PORT"'; \
     echo 'exec "''$''@"'; \
 } > /usr/local/bin/docker-entrypoint.sh
