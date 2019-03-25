@@ -269,8 +269,12 @@ APACHE_DOCUMENT_ROOT=/var/www/html/${APP_ROOT%/}
 DOCKER_COMPOSE_ARGS=("-f" "docker-compose.yml")
 
 if [[ $MYSQL_PORT_MAP ]]; then
+     if [[ ! $MYSQL_PORT ]]; then
+        IFS=: read -r MYSQL_EXTERNAL_PORT MYSQL_PORT<<< "$MYSQL_PORT_MAP"
+     fi
      DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-mysql.yml")
 fi
+MYSQL_PORT=${MYSQL_PORT:-3306}
 
 if [[ $APP_PORT_MAP ]]; then
      DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-app.yml")
