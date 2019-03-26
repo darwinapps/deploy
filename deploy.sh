@@ -322,6 +322,14 @@ case $1 in
             (cd webroot/ && gitcmd submodule update --init --recursive)
         fi
 
+        if [[ $(declare -F postinstall) ]]; then
+            echo "running postinstall function";
+            docker run --rm -it \
+                -v "$PWD/webroot/:/var/www/html/" \
+                -v "$PWD/config:/tmp/config" $APP_IMAGE \
+                    bash -c "source /tmp/config && postinstall"
+        fi
+
         if [[ ! -d log/apache2 ]]; then
              mkdir -p log/apache2
         fi
