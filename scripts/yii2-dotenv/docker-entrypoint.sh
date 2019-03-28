@@ -33,10 +33,14 @@ ENVIRONMENT=development
 #SMTP_PORT=587
 #SMTP_ENCRYPTION=tls
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> more generic .env
 #MAIL_SENDER_ADDRESS=
 #MAIL_SENDER_NAME=
 #MAIL_ADMIN_ADDRESS=
 #MAIL_DEV_ADDRESS=
+<<<<<<< HEAD
 #MAIL_SWAP_ADMIN_TO_DEV=True
 FACEBOOK_APP_ID=
 BASE_DOMAIN=${PROJECT}.web
@@ -50,15 +54,24 @@ STATIC_URL=http://${PROJECT}.web
 #MAIL_SENDER_NAME='The Hub'
 #MAIL_ADMIN_ADDRESS=thehub@youthmarketing.com
 #MAIL_DEV_ADDRESS=jeremy.litten@gmail.com,jon@linesandwaves.com
+=======
+>>>>>>> more generic .env
 #MAIL_SWAP_ADMIN_TO_DEV=True
-FACEBOOK_APP_ID=326108764242439
-BASE_DOMAIN=thehub.web
+FACEBOOK_APP_ID=
+BASE_DOMAIN=${PROJECT}.web
 COOKIE_VALIDATION_KEY=ogCtZNMnOLWhAKDp6x9dFNFc0iJo5wpI2
+<<<<<<< HEAD
 APP_DOMAIN=thehub.web
 APP_URL=http://thehub.web
 STATIC_DOMAIN=thehub.web
 STATIC_URL=http://thehub.web
 >>>>>>> getting rid of compromised credentials
+=======
+APP_DOMAIN=${PROJECT}.web
+APP_URL=http://${PROJECT}.web
+STATIC_DOMAIN=${PROJECT}.web
+STATIC_URL=http://${PROJECT}.web
+>>>>>>> more generic .env
 EOF
 	fi
 
