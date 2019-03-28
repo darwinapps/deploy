@@ -110,12 +110,6 @@ USER mapped
         . -q
 }
 
-function get_latest_db_dump_pantheon {
-    FILENAME=${1:-latest.sql.gz}
-    TERMINUSID=$(get_terminus_cli)
-    docker run --rm -it -e HOME=/tmp -v "$PWD/mysql-init-script/:/mysql-init-script/" \
-        $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading database ...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=db --to=/mysql-init-script/latest.sql.gz"
-}
 
 function get_latest_files_from_aws() {
     FILENAME=${1:-files.tgz}
@@ -147,6 +141,33 @@ function get_latest_files_from_pantheon {
     fi
 }
 
+function get_latest_db_dump_pantheon {
+    FILENAME=${1:-latest.sql.gz}
+    TERMINUSID=$(get_terminus_cli)
+    docker run --rm -it -e HOME=/tmp -v "$PWD/mysql-init-script/:/mysql-init-script/" \
+        $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading database ...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=db --to=/mysql-init-script/latest.sql.gz"
+}
+
+function get_latest_db_dump_wpengine() {
+    FILENAME=${1:-latest.sql}
+
+    IFS=@ read -r USERNAMEPASSWORD HOSTPORTPATH <<< "${WPENGINE_SFTP}"
+    IFS=: read -r PROTO USERNAME PASSWORD <<< "${USERNAMEPASSWORD}"
+    IFS=/ read -r HOSTPORT JUNK<<< "$HOSTPORTPATH"
+    DBDUMP_URI="${PROTO}:${USERNAME}@${HOSTPORT}/wp-content/mysql.sql"
+
+    echo "Downloading database dump from WPENGINE..."
+    /usr/bin/expect <<EOD
+        log_user 0
+        set timeout 300
+        spawn sftp -q $DBDUMP_URI mysql-init-script/$FILENAME
+        expect "password:" { send "${PASSWORD}\n" }
+        expect eof
+EOD
+
+    gzip mysql-init-script/$FILENAME
+}
+
 function get_latest_db_dump_aws() {
     FILENAME=${1:-latest.sql.gz}
     AWSID=$(get_aws_cli)
@@ -168,6 +189,8 @@ function get_latest_db_dump {
             get_latest_db_dump_aws
         elif [[ $PANTHEON_SITE_NAME ]]; then
             get_latest_db_dump_pantheon
+        elif [[ $WPENGINE_SFTP ]]; then
+            get_latest_db_dump_wpengine
         fi
     fi
 }
@@ -270,7 +293,7 @@ DOCKER_COMPOSE_ARGS=("-f" "docker-compose.yml")
 
 if [[ $MYSQL_PORT_MAP ]]; then
      if [[ ! $MYSQL_PORT ]]; then
-        IFS=: read -r MYSQL_EXTERNAL_PORT MYSQL_PORT<<< "$MYSQL_PORT_MAP"
+        IFS=: read -r MYSQL_EXTERNAL_PORT MYSQL_PORT <<< "$MYSQL_PORT_MAP"
      fi
      DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-mysql.yml")
 fi
