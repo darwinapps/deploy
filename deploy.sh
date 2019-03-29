@@ -3,7 +3,7 @@
 
 set -o pipefail
 
-function get_aws_cli() {
+function get_aws_cli {
     DOCKERFILE='
 FROM debian:stable-slim
 
@@ -38,7 +38,7 @@ USER mapped
         . -q
 }
 
-function get_git_cli() {
+function get_git_cli {
     REPOSITORY_KEY=$(echo "$1" | perl -pe 's/\n/\\n/g')
 
     DOCKERFILE="
@@ -75,7 +75,7 @@ ENTRYPOINT [\"git\"]
         . -q
 }
 
-function get_terminus_cli() {
+function get_terminus_cli {
     DOCKERFILE='
 FROM php:7.0-cli
 
@@ -111,7 +111,7 @@ USER mapped
 }
 
 
-function get_latest_files_from_aws() {
+function get_latest_files_from_aws {
     FILENAME=${1:-files.tgz}
     if [[ ! -f remote-files/latest.tgz ]]; then
         if [[ ! -d remote-files/ ]]; then
@@ -148,7 +148,7 @@ function get_latest_db_dump_pantheon {
         $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading database ...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=db --to=/mysql-init-script/latest.sql.gz"
 }
 
-function get_latest_db_dump_wpengine() {
+function get_latest_db_dump_wpengine {
     FILENAME=${1:-latest.sql}
 
     IFS=@ read -r USERNAMEPASSWORD HOSTPORTPATH <<< "${WPENGINE_SFTP}"
@@ -168,7 +168,7 @@ EOD
     gzip mysql-init-script/$FILENAME
 }
 
-function get_latest_db_dump_aws() {
+function get_latest_db_dump_aws {
     FILENAME=${1:-latest.sql.gz}
     AWSID=$(get_aws_cli)
     echo "Downloading database dump from AWS..."
@@ -195,7 +195,7 @@ function get_latest_db_dump {
     fi
 }
 
-function upload_dump() {
+function upload_dump {
     BUCKET=$1
     FILENAME=$2
     AWSCLI=$(get_aws_cli)
@@ -216,7 +216,7 @@ function upload_dump() {
                  aws s3 cp /backup/$FILENAME s3://$BUCKET/latest.sql.gz
 }
 
-function gitcmd() {
+function gitcmd {
     if [[ $REPOSITORY_KEY != "" ]]; then
         GIT=$(get_git_cli "$REPOSITORY_KEY")
         docker run -ti --rm -v $PWD:/git -e GIT_SSH_COMMAND='ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" -i /id_rsa' $GIT "$@"
@@ -225,7 +225,7 @@ function gitcmd() {
     fi
 }
 
-function extract_remote_files() {
+function extract_remote_files {
     DIR=$1
     STRIP=${2:0}
     if [[ -f remote-files/latest.tgz ]] && [[ $DIR ]]; then
@@ -235,7 +235,7 @@ function extract_remote_files() {
     fi
 }
 
-function self_update() {
+function self_update {
     # self-update
     echo "Checking for a new version of me..."
     git fetch
@@ -348,8 +348,10 @@ case $1 in
 
         if [[ $(declare -F postinstall) ]]; then
             echo "running postinstall function";
-            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} run --no-deps --rm webapp \
-                bash -c "source /tmp/config && postinstall"
+            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} -f docker-compose-app-user.yml \
+                run --no-deps --rm webapp \
+                    bash -c "source /tmp/config && postinstall"
+
         fi
 
         extract_remote_files $FILES_DIR $( [[ $PANTHEON_SITE_NAME ]] && echo 1 )
@@ -452,4 +454,5 @@ case $1 in
     *)
         display_usage
         ;;
+
 esac
