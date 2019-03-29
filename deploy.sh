@@ -345,22 +345,12 @@ case $1 in
             (cd webroot/ && gitcmd submodule update --init --recursive)
         fi
 
+
         if [[ $(declare -F postinstall) ]]; then
             echo "running postinstall function";
             docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} run --no-deps --rm webapp \
                 bash -c "source /tmp/config && postinstall"
         fi
-
-        if [[ ! -d log/apache2 ]]; then
-             mkdir -p log/apache2
-        fi
-        if [[ ! -d log/mysql ]]; then
-             mkdir -p log/mysql
-        fi
-
-        touch log/apache2/access.log
-        touch log/apache2/error.log
-        touch log/mysql/error.log
 
         extract_remote_files $FILES_DIR $( [[ $PANTHEON_SITE_NAME ]] && echo 1 )
         ;;
@@ -376,6 +366,29 @@ case $1 in
         if [[ ! -d webroot/.git ]]; then
             echo "Content in your webroot is not tracked by git"
         fi
+        if [[ ! -d log/apache2 ]]; then
+             mkdir -p log/apache2
+        fi
+        # error.log might be created as directory if not exists and mounted by docker-compose
+        if [[ ! -f log/apache2/error.log ]]; then
+            rm -rf log/apache2/error.log
+            touch log/apache2/error.log
+        fi
+        # access.log might be created as directory if not exists and mounted by docker-compose
+        if [[ ! -f log/apache2/access.log ]]; then
+            rm -rf log/apache2/access.log
+            touch log/apache2/access.log
+        fi
+
+        if [[ ! -d log/mysql ]]; then
+             mkdir -p log/mysql
+        fi
+        # error.log might be created as directory if not exists and mounted by docker-compose
+        if [[ ! -f log/mysql/error.log ]]; then
+            rm -rf log/mysql/error.log
+            touch log/mysql/error.log
+        fi
+
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
         ;;
     status)
