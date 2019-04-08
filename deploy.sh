@@ -350,7 +350,7 @@ case $1 in
             echo "running postinstall function";
             docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} -f docker-compose-app-user.yml \
                 run --no-deps --rm webapp \
-                    bash -c "source /tmp/config && postinstall"
+                    bash -c "source /tmp/config && HOME=/tmp && postinstall"
 
         fi
 
