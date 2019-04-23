@@ -13,6 +13,7 @@ RUN apt-get install -y --no-install-recommends \
     less \
     libjpeg-dev \
     libpng-dev \
+    libfreetype6-dev \
     libgeoip-dev \
     libmcrypt-dev \
     git \
@@ -29,7 +30,7 @@ RUN apt-get install -y --no-install-recommends \
     imagemagick
     
 # NATIVE
-RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr
+RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr --with-freetype-dir=/usr
 RUN docker-php-ext-install -j$(nproc) gd mysqli pdo_mysql opcache zip
 
 RUN \
