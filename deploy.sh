@@ -346,7 +346,7 @@ fi
 
 case $1 in
     prepare)
-	progress 10 Initialize
+        progress 10 Initialize
         self_update "$@"
 
         if [[ $MYSQL_DOCKERFILE ]]; then
@@ -358,9 +358,9 @@ case $1 in
                 -f $MYSQL_DOCKERFILE \
                 -t $MYSQL_IMAGE . || exit 1
         fi
-	progress 10 "docker pull"
+        progress 10 "docker pull"
         docker pull ${APP_BASE_IMAGE}
-	progress 20 "docker build"
+        progress 20 "docker build"
         cat ${APP_DOCKERFILES[@]} | docker --log-level "error" build \
             --build-arg APP_BASE_IMAGE=$APP_BASE_IMAGE \
             --build-arg USERID=$USERID \
@@ -371,7 +371,7 @@ case $1 in
             --build-arg PHP_SHORT_OPEN_TAG=$PHP_SHORT_OPEN_TAG \
             -f - \
             -t $APP_IMAGE . || exit 1
-	progress 70 "Get latest DB Dump"
+        progress 70 "Get latest DB Dump"
         get_latest_db_dump
 
         if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
@@ -393,14 +393,14 @@ case $1 in
                     bash -c "source /tmp/config && HOME=/tmp && postinstall"
 
         fi
-	progress 80 "Extract files"
+        progress 80 "Extract files"
         extract_remote_files $FILES_DIR $( [[ $PANTHEON_SITE_NAME ]] && echo 1 )
-	progress 100 "Done"
+        progress 100 "Done"
         ;;
     down)
-    	progress 10 "Shutting down"
+        progress 10 "Shutting down"
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
-	progress 100 "Done"
+        progress 100 "Done"
         ;;
     up)
         [[ $2 == "-d" ]] || progress 10 "Self update"
