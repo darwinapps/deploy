@@ -403,19 +403,19 @@ case $1 in
 	progress 100 "Done"
         ;;
     up)
-    	progress 10 "Self update"
+        [[ $2 == "-d" ]] || progress 10 "Self update"
         self_update "$@"
         if [[ ! -d data/db ]]; then
             mkdir -p data/db/
         fi
-	progress 20 "Check git tracked"
+        [[ $2 == "-d" ]] || progress 20 "Check git tracked"
         if [[ ! -d webroot/.git ]]; then
             echo "Content in your webroot is not tracked by git"
         fi
         if [[ ! -d log/apache2 ]]; then
              mkdir -p log/apache2
         fi
-	progress 50 "Setting up apache/mysql logs.."
+        [[ $2 == "-d" ]] || progress 50 "Setting up apache/mysql logs.."
         # error.log might be created as directory if not exists and mounted by docker-compose
         if [[ ! -f log/apache2/error.log ]]; then
             rm -rf log/apache2/error.log
@@ -435,7 +435,7 @@ case $1 in
             rm -rf log/mysql/error.log
             touch log/mysql/error.log
         fi
-	progress 99 "Wait 2-3 minutes. Exit: ctrl + c"
+        [[ $2 == "-d" ]] || progress 99 "Wait 2-3 minutes. Exit: ctrl + c"
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
         ;;
     status)
