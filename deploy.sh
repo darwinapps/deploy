@@ -454,7 +454,7 @@ case $1 in
         ;;
     dump-database)
         if [[ $(docker ps -f id=$(docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} ps -q mysql) -q) != ""  ]]; then
-            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec -T mysql mysqldump -uroot $MYSQL_DATABASE "${@:2}"
+            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec -T mysql mysqldump -uroot $MYSQL_DATABASE "${@:2}" > /dev/tty
         else
             echo "MYSQL container is not running"
             exit 1
