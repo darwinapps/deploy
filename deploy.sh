@@ -493,3 +493,5 @@ case $1 in
         ;;
 
 esac
+
+} >> debug.log 2>&1
