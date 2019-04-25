@@ -435,7 +435,8 @@ case $1 in
             rm -rf log/mysql/error.log
             touch log/mysql/error.log
         fi
-        [[ $2 == "-d" ]] || progress 99 "Wait 2-3 minutes. Exit: ctrl + c"
+        [[ $2 == "-d" ]] || progress 90 "Wait 2-3 min. Exit: ctrl+c"
+        [[ $2 == "-d" ]] || progress 95 "\n"	
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
         ;;
     status)
