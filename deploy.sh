@@ -360,6 +360,7 @@ case $1 in
         fi
 	progress 10 "docker pull"
         docker pull ${APP_BASE_IMAGE}
+	progress 20 "docker build"
         cat ${APP_DOCKERFILES[@]} | docker --log-level "error" build \
             --build-arg APP_BASE_IMAGE=$APP_BASE_IMAGE \
             --build-arg USERID=$USERID \
