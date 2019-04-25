@@ -431,19 +431,19 @@ case $1 in
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
         ;;
     status)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} ps
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} ps > /dev/tty
         ;;
     run)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} run --no-deps --rm webapp su mapped -c "HOME=/tmp; ${*:2}"
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} run --no-deps --rm webapp su mapped -c "HOME=/tmp; ${*:2}" > /dev/tty
         ;;
     su-run)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} run --no-deps --rm webapp "${@:2}"
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} run --no-deps --rm webapp "${@:2}" > /dev/tty
         ;;	
     exec)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec webapp ${*:2}
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec webapp ${*:2} > /dev/tty
         ;;
     git)
-        gitcmd -C webroot/ ${*:2}
+        gitcmd -C webroot/ ${*:2} > /dev/tty
         ;;
     dump-database)
         if [[ $(docker ps -f id=$(docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} ps -q mysql) -q) != ""  ]]; then
