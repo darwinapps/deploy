@@ -397,7 +397,9 @@ case $1 in
 	progress 100 "Done"
         ;;
     down)
+    	progress 10 "Shutting down"
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
+	progress 100 "Done"
         ;;
     up)
         self_update "$@"
