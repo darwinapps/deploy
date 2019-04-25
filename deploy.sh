@@ -36,6 +36,8 @@ function progress()
 
 } > /dev/tty
 
+{
+
 set -o pipefail
 
 function get_aws_cli {
