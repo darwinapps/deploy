@@ -1,5 +1,11 @@
 #!/bin/bash
 
+LOGFILE="debug.log"
+if [[ $1 == '-v' ]]; then
+   LOGFILE=/dev/stdout
+   shift
+fi
+
 function delay()
 {
     sleep 0.1;
@@ -8,6 +14,8 @@ function delay()
 CURRENT_PROGRESS=0
 function progress()
 {
+    if [[ $LOGFILE == /dev/stdout ]]; then return; fi
+
     PARAM_PROGRESS=$1;
 	PARAM_PHASE=$( printf "%-60s%-4s"  "${2:0:60}");
 	
@@ -35,6 +43,7 @@ function progress()
     CURRENT_PROGRESS=$PARAM_PROGRESS;
 
 } > /dev/tty
+
 
 {
 
@@ -516,4 +525,4 @@ case $1 in
 
 esac
 
-} >> debug.log 2>&1
+} >> $LOGFILE 2>&1
