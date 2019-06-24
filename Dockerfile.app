@@ -16,6 +16,7 @@ RUN apt-get install -y --no-install-recommends \
     libfreetype6-dev \
     libgeoip-dev \
     libmcrypt-dev \
+    libzip-dev \
     git \
     tcpdump \
     telnet \
@@ -38,9 +39,14 @@ RUN \
     then \
         pecl install channel://pecl.php.net/mcrypt-1.0.1; \
         docker-php-ext-enable mcrypt; \
-    else \
-        docker-php-ext-configure mcrypt; \
-        docker-php-ext-install -j$(nproc) mcrypt; \
+    else if echo "${APP_BASE_IMAGE}" | egrep -q ^php:7.3-apache$; \
+        then \
+            pecl install channel://pecl.php.net/mcrypt-1.0.2; \
+            docker-php-ext-enable mcrypt; \
+        else \
+            docker-php-ext-configure mcrypt; \
+            docker-php-ext-install -j$(nproc) mcrypt; \
+        fi \
     fi
 
 
