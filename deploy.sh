@@ -328,7 +328,7 @@ MYSQL_BASE_IMAGE=${MYSQL_BASE_IMAGE:-mysql:5.6}
 APP_CONTAINER="$PROJECT-app"
 APP_IMAGE=$APP_CONTAINER
 APP_DOCKERFILES=("Dockerfile.app")
-APP_BASE_IMAGE=${APP_BASE_IMAGE:-php:7.2-apache-stretch}
+APP_BASE_IMAGE=${APP_BASE_IMAGE:-php:7.2-apache}
 
 if [[ -e "Dockerfile.${APP_TYPE}" ]]; then
     APP_DOCKERFILES+=("Dockerfile.${APP_TYPE}")
