@@ -20,6 +20,7 @@ RUN apt-get install -y --no-install-recommends \
     git \
     tcpdump \
     telnet \
+    mysql-client \
     net-tools \
     nano \
     zip \
