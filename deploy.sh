@@ -197,6 +197,7 @@ function get_latest_db_dump_pantheon {
 function get_latest_db_dump_wpengine {
     FILENAME=${1:-latest.sql}
 
+    # username:password@hostname:port
     IFS=@ read -r USERNAMEPASSWORD HOSTPORTPATH <<< "${WPENGINE_SFTP}"
     IFS=: read -r PROTO USERNAME PASSWORD <<< "${USERNAMEPASSWORD}"
     IFS=/ read -r HOSTPORT JUNK<<< "$HOSTPORTPATH"
@@ -212,6 +213,27 @@ function get_latest_db_dump_wpengine {
 EOD
 
     gzip mysql-init-script/$FILENAME
+}
+
+function get_latest_db_dump_generic_ssh {
+    FILENAME=${1:-latest.sql.gz}
+
+    # username:password@hostname:port
+    IFS=@ read -r USERNAMEPASSWORD HOSTPORTPATH <<< "${GENERIC_SSH}"
+    IFS=: read -r USERNAME PASSWORD <<< "${USERNAMEPASSWORD}"
+    IFS=/ read -r HOSTPORT JUNK<<< "$HOSTPORTPATH"
+    IFS=: read -r HOST PORT <<< "${HOSTPORT}"
+
+    # username:password@hostname:port/database
+    IFS=@ read -r _MYSQL_USERNAMEPASSWORD _MYSQL_HOSTPORTPATH <<< "${REMOTE_MYSQL}"
+    IFS=: read -r _MYSQL_USERNAME _MYSQL_PASSWORD <<< "${_MYSQL_USERNAMEPASSWORD}"
+    IFS=/ read -r _MYSQL_HOSTPORT _MYSQL_PATH <<< "${_MYSQL_HOSTPORTPATH}"
+    IFS=: read -r _MYSQL_HOST _MYSQL_PORT <<< "${_MYSQL_HOSTPORT}"
+
+    echo "Downloading database dump from generic SSH..."
+    ssh -p $PORT $USERNAME@$HOST mysqldump -u"${_MYSQL_USERNAME}" -p"${_MYSQL_PASSWORD}" -h"${_MYSQL_HOST}" -P"${_MYSQL_PORT}" "${_MYSQL_PATH}" \
+        | gzip > mysql-init-script/$FILENAME
+
 }
 
 function get_latest_db_dump_aws {
@@ -235,6 +257,8 @@ function get_latest_db_dump {
             get_latest_db_dump_aws
         elif [[ $PANTHEON_SITE_NAME ]]; then
             get_latest_db_dump_pantheon
+        elif [[ $GENERIC_SSH && $REMOTE_MYSQL ]]; then
+            get_latest_db_dump_generic_ssh
         elif [[ $WPENGINE_SFTP ]]; then
             get_latest_db_dump_wpengine
         fi
