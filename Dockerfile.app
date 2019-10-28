@@ -20,7 +20,6 @@ RUN apt-get install -y --no-install-recommends \
     git \
     tcpdump \
     telnet \
-    mysql-client \
     net-tools \
     nano \
     zip \
@@ -29,6 +28,8 @@ RUN apt-get install -y --no-install-recommends \
     wget \
     ssh \
     imagemagick
+
+RUN apt-get install -y --no-install-recommends mysql-client || apt-get install -y --no-install-recommends default-mysql-client
     
 # NATIVE
 RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr --with-freetype-dir=/usr
