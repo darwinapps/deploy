@@ -377,6 +377,9 @@ if [[ $APP_NETWORK ]]; then
      DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-app-network.yml")
 fi
 
+if [[ -e "docker-compose.${PROJECT}.yml" ]]; then
+     DOCKER_COMPOSE_ARGS+=("-f" "docker-compose.${PROJECT}.yml")
+fi
 
 case $1 in
     prepare)
@@ -387,7 +390,6 @@ case $1 in
             echo "running preinstall function";
             preinstall
         fi
-
 
         if [[ $MYSQL_DOCKERFILE ]]; then
             docker pull ${MYSQL_BASE_IMAGE}
@@ -476,9 +478,6 @@ case $1 in
             touch log/mysql/error.log
         fi
 
-        if [[ -e "docker-compose.${PROJECT}.yml" ]]; then
-             DOCKER_COMPOSE_ARGS+=("-f" "docker-compose.${PROJECT}.yml")
-        fi
 
         [[ $2 == "-d" ]] || progress 90 "Wait 2-3 min. Exit: ctrl+c"
         [[ $2 == "-d" ]] || progress 95 "\n"	
