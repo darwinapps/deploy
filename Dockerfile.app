@@ -70,7 +70,7 @@ RUN { \
 
 RUN { \
     echo "short_open_tag=${PHP_SHORT_OPEN_TAG}"; \
-    echo 'memory_limit=512M'; \
+    echo 'memory_limit=1G'; \
     echo 'post_max_size=6152M'; \
     echo 'upload_max_filesize=6144M'; \
     echo 'max_execution_time=3600'; \
