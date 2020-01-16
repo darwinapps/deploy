@@ -36,7 +36,7 @@ RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr --with-
 RUN docker-php-ext-install -j$(nproc) gd mysqli pdo_mysql opcache zip
 
 RUN \
-    if echo "${APP_BASE_IMAGE}" | egrep -q ^php:7.2-apache-stretch$; \
+    if echo "${APP_BASE_IMAGE}" | egrep -q ^php:7.2-apache; \
     then \
         pecl install channel://pecl.php.net/mcrypt-1.0.1; \
         docker-php-ext-enable mcrypt; \
