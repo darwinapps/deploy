@@ -313,7 +313,11 @@ function self_update {
         echo "Found a new version of me, updating..."
         git reset --hard origin/master
         echo "Restarting..."
-        exec "$0" "$@"
+        if [[ $LOGFILE == /dev/stdout ]]; then 
+            exec "$0" "-v" "$@"
+        else
+            exec "$0" "$@"
+        fi 
         exit 1
     fi
 }
