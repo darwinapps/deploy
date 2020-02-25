@@ -231,9 +231,23 @@ function get_latest_db_dump_generic_ssh {
     IFS=: read -r _MYSQL_HOST _MYSQL_PORT <<< "${_MYSQL_HOSTPORT}"
 
     echo "Downloading database dump from generic SSH..."
-    ssh -p $PORT $USERNAME@$HOST mysqldump -u"${_MYSQL_USERNAME}" -p"${_MYSQL_PASSWORD}" -h"${_MYSQL_HOST}" -P"${_MYSQL_PORT}" "${_MYSQL_PATH}" \
-        | gzip > mysql-init-script/$FILENAME
+    # ssh -p $PORT $USERNAME@$HOST mysqldump -u"${_MYSQL_USERNAME}" -p"${_MYSQL_PASSWORD}" -h"${_MYSQL_HOST}" -P"${_MYSQL_PORT}" "${_MYSQL_PATH}" \
+    #     | gzip > mysql-init-script/$FILENAME
 
+    /usr/bin/expect <<EOD
+        set timeout 300
+        spawn ssh -o StrictHostKeyChecking=no -p $PORT $USERNAME@$HOST mysqldump -u"${_MYSQL_USERNAME}" -p"${_MYSQL_PASSWORD}" -h"${_MYSQL_HOST}" -P"${_MYSQL_PORT}" "${_MYSQL_PATH}" \
+              | gzip > $FILENAME
+        expect "password:" { send "${PASSWORD}\r" }
+        expect eof
+EOD
+
+    /usr/bin/expect <<EOD
+        set timeout 300
+        spawn rsync -e "ssh -o StrictHostKeyChecking=no -p $PORT" --remove-source-files $USERNAME@$HOST:$FILENAME mysql-init-script/$FILENAME
+        expect "password:" { send "${PASSWORD}\r" }
+        expect eof
+EOD
 }
 
 function get_latest_db_dump_aws {
