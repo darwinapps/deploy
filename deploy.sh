@@ -156,6 +156,31 @@ USER mapped
         . -q
 }
 
+function get_latest_files_from_ssh {
+    if [[ ! -d webroot/$FILES_DIR ]]; then mkdir -p webroot/$FILES_DIR; fi
+    progress 10 "Upload files synchronization from generic SSH..."
+    echo "Upload files synchronization from generic SSH..."
+
+    # username:password@hostname:port
+    IFS=@ read -r USERNAMEPASSWORD HOSTPORTPATH <<< "${GENERIC_SSH}"
+    IFS=: read -r USERNAME PASSWORD <<< "${USERNAMEPASSWORD}"
+    IFS=/ read -r HOSTPORT JUNK<<< "$HOSTPORTPATH"
+    IFS=: read -r HOST PORT <<< "${HOSTPORT}"
+
+    if [[ -z ${PORT} ]]; then PORT=22; fi
+
+    /usr/bin/expect <<EOD
+        set timeout 3600
+        spawn rsync -e "ssh -o StrictHostKeyChecking=no -p $PORT" --delete -av $USERNAME@$HOST:$RSYNC_DIR/ webroot/$FILES_DIR
+        expect "password:" {
+            send "${PASSWORD}\r"
+            expect eof
+            }
+EOD
+
+    progress 100 "Done"
+
+}
 
 function get_latest_files_from_aws {
     FILENAME=${1:-files.tgz}
@@ -235,18 +260,22 @@ function get_latest_db_dump_generic_ssh {
     #     | gzip > mysql-init-script/$FILENAME
 
     /usr/bin/expect <<EOD
-        set timeout 300
+        set timeout 3600
         spawn ssh -o StrictHostKeyChecking=no -p $PORT $USERNAME@$HOST mysqldump -u"${_MYSQL_USERNAME}" -p"${_MYSQL_PASSWORD}" -h"${_MYSQL_HOST}" -P"${_MYSQL_PORT}" "${_MYSQL_PATH}" \
               | gzip > $FILENAME
-        expect "password:" { send "${PASSWORD}\r" }
-        expect eof
+        expect "password:" {
+            send "${PASSWORD}\r"
+            expect eof
+            }
 EOD
 
     /usr/bin/expect <<EOD
-        set timeout 300
+        set timeout 3600
         spawn rsync -e "ssh -o StrictHostKeyChecking=no -p $PORT" --remove-source-files $USERNAME@$HOST:$FILENAME mysql-init-script/$FILENAME
-        expect "password:" { send "${PASSWORD}\r" }
-        expect eof
+        expect "password:" {
+            send "${PASSWORD}\r"
+            expect eof
+            }
 EOD
 }
 
@@ -324,15 +353,15 @@ function self_update {
     echo "Checking for a new version of me..."
     git fetch
     if [[ -n $(git diff --name-only origin/master) ]]; then
-        echo "Found a new version of me, updating..."
-        git reset --hard origin/master
-        echo "Restarting..."
-        if [[ $LOGFILE == /dev/stdout ]]; then 
-            exec "$0" "-v" "$@"
-        else
-            exec "$0" "$@"
-        fi 
-        exit 1
+       echo "Found a new version of me, updating..."
+       git reset --hard origin/master
+       echo "Restarting..."
+       if [[ $LOGFILE == /dev/stdout ]]; then 
+           exec "$0" "-v" "$@"
+       else
+           exec "$0" "$@"
+       fi 
+       exit 1
     fi
 }
 
@@ -431,20 +460,23 @@ case $1 in
             --build-arg PHP_SHORT_OPEN_TAG=$PHP_SHORT_OPEN_TAG \
             -f - \
             -t $APP_IMAGE . || exit 1
-        progress 70 "Get latest DB Dump"
+        progress 50 "Get latest DB Dump"
         get_latest_db_dump
 
-        if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
-            get_latest_files_from_pantheon
-        elif [[ $FILES_DIR ]]; then
-            get_latest_files_from_aws
-        fi
-	
+        progress 60 "Get latest files from GitHub repository"
         if [[ $REPOSITORY ]] &&[[ ! -d webroot/.git ]]; then
             gitcmd clone --recurse-submodules $REPOSITORY webroot/
             (cd webroot/ && gitcmd submodule update --init --recursive)
         fi
 
+        progress 70 "Get latest upload files"
+        if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
+            get_latest_files_from_pantheon
+        elif [[ $RSYNC_DIR ]] && [[ $FILES_DIR ]] && [[ $GENERIC_SSH ]]; then
+            get_latest_files_from_ssh
+        elif [[ $FILES_DIR ]]; then
+            get_latest_files_from_aws
+        fi
 
         if [[ $(declare -F postinstall) ]]; then
             echo "running postinstall function";
@@ -453,8 +485,10 @@ case $1 in
                     bash -c "source /tmp/config && HOME=/tmp && postinstall"
 
         fi
+        
         progress 80 "Extract files"
         extract_remote_files $FILES_DIR $( [[ $PANTHEON_SITE_NAME ]] && echo 1 )
+
         progress 100 "Done"
         ;;
     down)
@@ -535,6 +569,8 @@ case $1 in
             rm -rf remote-files/
             get_latest_files_from_pantheon
             extract_remote_files $FILES_DIR 1
+        elif [[ $RSYNC_DIR ]] && [[ $FILES_DIR ]] && [[ $GENERIC_SSH ]]; then
+            get_latest_files_from_ssh
         elif [[ $FILES_DIR ]]; then
             rm -rf remote-files/
             get_latest_files_from_aws
