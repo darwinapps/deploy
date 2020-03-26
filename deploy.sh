@@ -1,9 +1,9 @@
 #!/bin/bash
 
 LOGFILE="debug.log"
-if [[ $1 == '-v' ]]; then
+if [[ $1 == '-v' || $1 == 'dump-database' ]]; then
    LOGFILE=/dev/stdout
-   shift
+   if [[ $1 == '-v' ]]; then shift; fi
 fi
 
 function delay()
@@ -537,23 +537,23 @@ case $1 in
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
         ;;
     status)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} ps > /dev/tty
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} ps
         ;;
     run)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} run --no-deps --rm webapp su mapped -c "HOME=/tmp; ${*:2}" > /dev/tty
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} run --no-deps --rm webapp su mapped -c "HOME=/tmp; ${*:2}"
         ;;
     su-run)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} run --no-deps --rm webapp "${@:2}" > /dev/tty
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} run --no-deps --rm webapp "${@:2}"
         ;;	
     exec)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec webapp ${*:2} > /dev/tty
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec webapp ${*:2}
         ;;
     git)
-        gitcmd -C webroot/ ${*:2} > /dev/tty
+        gitcmd -C webroot/ ${*:2}
         ;;
     dump-database)
         if [[ $(docker ps -f id=$(docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} ps -q mysql) -q) != ""  ]]; then
-            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec -T mysql mysqldump -uroot $MYSQL_DATABASE "${@:2}" > /dev/tty
+            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec -T mysql mysqldump -uroot $MYSQL_DATABASE "${@:2}"
         else
             echo "MYSQL container is not running"
             exit 1
