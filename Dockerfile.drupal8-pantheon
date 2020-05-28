@@ -12,10 +12,15 @@ RUN apt-get install -y \
         libmagickwand-dev \
         nodejs \
         yarn \
-        git
+        git \
+        xz-utils
 
-RUN curl -sOL 'https://downloads.sourceforge.net/project/imagemagick/old-sources/6.x/6.7/ImageMagick-6.7.7-10.tar.gz'
-RUN tar xvf ImageMagick-6.7.7-10.tar.gz
+# RUN curl -sOL 'https://downloads.sourceforge.net/project/imagemagick/old-sources/6.x/6.7/ImageMagick-6.7.7-10.tar.gz'
+# RUN tar xvf ImageMagick-6.7.7-10.tar.gz
+
+RUN curl -sOL 'https://imagemagick.org/download/releases/ImageMagick-6.7.7-10.tar.xz'
+RUN tar xvf ImageMagick-6.7.7-10.tar.xz
+
 RUN (cd ImageMagick-6.7.7-10 && ./configure --with-heic=yes --with-webp=yes && make -j $(( $(nproc) * 2 )) && make install)
 
 RUN yarn global add gulp
