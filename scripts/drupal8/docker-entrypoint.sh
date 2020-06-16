@@ -42,9 +42,9 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		# WRI20X20-26
 		echo -e "\$settings['disable_captcha'] = true;\n\n" >> $settingsf
 
-		echo -e "$local_settings = __DIR__ . '/settings.local.php';\n" \
-			"if (file_exists($local_settings)) {\n" \
-			"include $local_settings;\n" \
+		echo -e "\$local_settings = __DIR__ . '/settings.local.php';\n" \
+			"  if (file_exists($local_settings)) {\n" \
+			"  include $local_settings;\n" \
 			"};\n\n" >> $settingsf
 
 		chown "$user:$group" $settingsf;
