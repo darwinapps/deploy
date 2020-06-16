@@ -40,12 +40,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		echo -e "\$settings['hash_salt'] = \"Dq7Y_ipY3UsSdf23q5VsQuJa2OIjuOicQ_zOumlF4gQsb9Hvh1WW_a5-55IskNO0GibY26aBKQ\";\n\n" >> $settingsf
 
 		# WRI20X20-26
-		echo -e "\$settings['disable_captcha123'] = true;\n\n" >> $settingsf
-
-		echo -e "\$local_settings = __DIR__ . '/settings.local.php';\n" \
-			"  if (file_exists($local_settings)) {\n" \
-			"  include $local_settings;\n" \
-			"};\n\n" >> $settingsf
+		echo -e "\$settings['disable_captcha'] = true;\n\n" >> $settingsf
 
 		chown "$user:$group" $settingsf;
 	fi
