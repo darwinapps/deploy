@@ -45,7 +45,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 "    $local_settings = __DIR__ . '/settings.local.php';\n" \
 "if (file_exists($local_settings)) {\n" \
 "  include $local_settings;\n" \
-"}\n" \ >> $settingsf
+"}\n"  >> $settingsf
 		chown "$user:$group" $settingsf;
 	fi
 
