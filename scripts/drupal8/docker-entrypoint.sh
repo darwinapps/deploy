@@ -29,20 +29,9 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		if [ ! -z "${DEBUG:-}" ]; then
 			echo -e "\$conf['theme_debug'] = TRUE;\n" >> $settingsf
 		fi
-		echo -e "\$databases['default']['default'] = array(\n" \
-			"  'driver' => 'mysql',\n" \
-			"  'database' => '${MYSQL_DATABASE}',\n" \
-			"  'username' => '${MYSQL_USER}',\n" \
-			"  'password' => '${MYSQL_PASSWORD}',\n" \
-			"  'host' => '${MYSQL_HOST}',\n" \
-			"  'collation' => 'utf8mb4_general_ci',\n" \
-			");\n\n" >> $settingsf
-		echo -e "\$settings['hash_salt'] = \"Dq7Y_ipY3UsSdf23q5VsQuJa2OIjuOicQ_zOumlF4gQsb9Hvh1WW_a5-55IskNO0GibY26aBKQ\";\n\n" >> $settingsf
 
-		# WRI20X20-26
-		echo -e "\$settings['disable_captcha'] = true;\n\n" >> $settingsf
-    echo -e "\n" \
-"    $local_settings = __DIR__ . '/settings.local.php';\n" \
+		echo -e "\$settings['hash_salt'] = \"Dq7Y_ipY3UsSdf23q5VsQuJa2OIjuOicQ_zOumlF4gQsb9Hvh1WW_a5-55IskNO0GibY26aBKQ\";\n\n" >> $settingsf
+    echo -e "\$local_settings = __DIR__ . '/settings.local.php';\n" \
 "if (file_exists($local_settings)) {\n" \
 "  include $local_settings;\n" \
 "}\n"  >> $settingsf
