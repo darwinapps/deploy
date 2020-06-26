@@ -33,7 +33,7 @@ RUN apt-get install -y --no-install-recommends \
 RUN apt-get install -y --no-install-recommends mysql-client || apt-get install -y --no-install-recommends default-mysql-client
     
 # NATIVE
-RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr --with-freetype-dir=/usr --with-webp-dir=/usr \
+RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr --with-freetype-dir=/usr --with-webp-dir=/usr
 RUN docker-php-ext-install -j$(nproc) gd mysqli pdo_mysql opcache zip
 
 RUN \
