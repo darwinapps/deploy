@@ -29,7 +29,7 @@ RUN apt-get install -y --no-install-recommends \
     wget \
     ssh \
     imagemagick \
-    php-imagick
+    libmagickwand-dev
 
 RUN apt-get install -y --no-install-recommends mysql-client || apt-get install -y --no-install-recommends default-mysql-client
     
@@ -42,10 +42,14 @@ RUN \
     then \
         pecl install channel://pecl.php.net/mcrypt-1.0.1; \
         docker-php-ext-enable mcrypt; \
+        pecl install imagick; \
+        docker-php-ext-enable imagick; \
     else if echo "${APP_BASE_IMAGE}" | egrep -q ^php:7.3-apache$; \
         then \
             pecl install channel://pecl.php.net/mcrypt-1.0.2; \
             docker-php-ext-enable mcrypt; \
+            pecl install imagick; \
+            docker-php-ext-enable imagick; \
         else \
             docker-php-ext-configure mcrypt; \
             docker-php-ext-install -j$(nproc) mcrypt; \
