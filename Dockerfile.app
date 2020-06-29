@@ -28,7 +28,8 @@ RUN apt-get install -y --no-install-recommends \
     unzip \
     wget \
     ssh \
-    imagemagick
+    imagemagick \
+    php-imagick
 
 RUN apt-get install -y --no-install-recommends mysql-client || apt-get install -y --no-install-recommends default-mysql-client
     
