@@ -349,7 +349,7 @@ function extract_remote_files {
 }
 
 function self_update {
-    # self-update
+    self-update
     echo "Checking for a new version of me..."
     git fetch
     if [[ -n $(git diff --name-only origin/master) ]]; then
@@ -399,6 +399,11 @@ MYSQL_BASE_IMAGE=${MYSQL_BASE_IMAGE:-mysql:5.6}
 APP_CONTAINER="$PROJECT-app"
 APP_IMAGE=$APP_CONTAINER
 APP_DOCKERFILES=("Dockerfile.app")
+
+if [[ $APP_TYPE == "react" ]]; then
+    APP_DOCKERFILES=("Dockerfile.node.app")
+fi
+
 APP_BASE_IMAGE=${APP_BASE_IMAGE:-php:7.2-apache}
 
 if [[ -e "Dockerfile.${APP_TYPE}" ]]; then
