@@ -349,7 +349,7 @@ function extract_remote_files {
 }
 
 function self_update {
-    self-update
+    #self-update
     echo "Checking for a new version of me..."
     git fetch
     if [[ -n $(git diff --name-only origin/master) ]]; then
