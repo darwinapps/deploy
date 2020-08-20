@@ -400,10 +400,6 @@ APP_CONTAINER="$PROJECT-app"
 APP_IMAGE=$APP_CONTAINER
 APP_DOCKERFILES=("Dockerfile.app")
 
-if [[ $APP_TYPE == "react" ]]; then
-    APP_DOCKERFILES=("Dockerfile.node.app")
-fi
-
 APP_BASE_IMAGE=${APP_BASE_IMAGE:-php:7.2-apache}
 
 if [[ -e "Dockerfile.${APP_TYPE}" ]]; then
