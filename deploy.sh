@@ -499,7 +499,7 @@ case $1 in
         ;;
     up)
         [[ $2 == "-d" ]] || progress 10 "Self update"
-        self_update "$@"
+        # self_update "$@"
         if [[ ! -d data/db ]]; then
             mkdir -p data/db/
         fi
