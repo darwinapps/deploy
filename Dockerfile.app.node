@@ -4,14 +4,26 @@ FROM $APP_BASE_IMAGE
 # APP_BASE_IMAGE must be declared again after FROM
 ARG APP_BASE_IMAGE
 
+RUN apt-get update
+RUN apt-get install -y \
+        curl \
+        gnupg
+
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
+
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
+
+RUN apt-get install -y \
+        nodejs \
+        yarn
+
 ENV DEBIAN_FRONTEND noninteractive
 
 # --- fixing user permissions
 
 ARG USERID
 ARG GROUPID
-
-RUN userdel node
 
 RUN bash -c 'if [[ $(getent group $GROUPID | cut -d: -f1) == "" ]]; then groupadd -g $GROUPID node; else groupmod --new-name node $(getent group $GROUPID | cut -d: -f1); fi'
 RUN bash -c 'if [[ $(id -u mysql 2>/dev/null) == "" ]]; then useradd -r -g node -u $USERID --home-dir /var/www/html/ node; else usermod -u $USERID node; fi'
@@ -25,5 +37,3 @@ RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
 USER node
 
 ENTRYPOINT ["docker-entrypoint.sh"]
-
-CMD ["yarn", "start"]

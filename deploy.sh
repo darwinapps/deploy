@@ -349,6 +349,7 @@ function extract_remote_files {
 }
 
 function self_update {
+    # return
     #self-update
     echo "Checking for a new version of me..."
     git fetch
@@ -370,6 +371,9 @@ function display_usage {
     echo "    $0 ( prepare | down | up | status | run | su-run | exec | git | dump-database | sync-database | sync-files | upload | clean | realclean )"
     exit 1;
 }
+
+
+
 
 set -a
 
@@ -400,10 +404,8 @@ MYSQL_BASE_IMAGE=${MYSQL_BASE_IMAGE:-mysql:5.6}
 
 APP_CONTAINER="$PROJECT-app"
 APP_IMAGE=$APP_CONTAINER
-APP_DOCKERFILES=("Dockerfile.${BASE_APP_TYPE:-apache}")
+APP_DOCKERFILES=("Dockerfile.app.${BASE_APP_TYPE:-apache}")
 APP_BASE_IMAGE=${APP_BASE_IMAGE:-php:7.2-apache}
-
-
 
 
 if [[ -e "Dockerfile.${APP_TYPE}" ]]; then
@@ -453,6 +455,10 @@ case $1 in
         if [[ $(declare -F preinstall) ]]; then
             echo "running preinstall function";
             preinstall
+
+            if [[ -e "Dockerfile.${PROJECT}" ]]; then
+                APP_DOCKERFILES+=("Dockerfile.${PROJECT}")
+            fi
         fi
 
         if [[ $MYSQL_DATABASE ]] && [[ $MYSQL_DOCKERFILE ]]; then
