@@ -2,5 +2,22 @@ version: '3.1'
 
 services:
     mysql:
-        ports:
-            - $MYSQL_PORT_MAP
+        container_name: $MYSQL_CONTAINER
+        image: $MYSQL_IMAGE
+        environment:
+            MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+            MYSQL_USER: $MYSQL_USER
+            MYSQL_PASSWORD: $MYSQL_PASSWORD
+            MYSQL_DATABASE: $MYSQL_DATABASE
+            LANG: C.UTF-8
+        volumes:
+            - "./data/db/mysql:/var/lib/mysql:delegated"
+            - "./mysql-init-script:/docker-entrypoint-initdb.d:delegated"
+            - "./log/mysql/:/var/log/mysql/:delegated"
+    webapp:
+        environment:
+            MYSQL_PASSWORD: $MYSQL_PASSWORD
+            MYSQL_USER: $MYSQL_USER
+            MYSQL_DATABASE: $MYSQL_DATABASE
+            MYSQL_HOST: $MYSQL_CONTAINER
+            MYSQL_PORT: $MYSQL_PORT

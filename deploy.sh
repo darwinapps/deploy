@@ -391,6 +391,8 @@ source ./config
 
 [[ -z "${PHP_SHORT_OPEN_TAG}" ]] && PHP_SHORT_OPEN_TAG="Off"
 
+
+
 MYSQL_CONTAINER="$PROJECT-mysql"
 MYSQL_IMAGE=$MYSQL_CONTAINER
 MYSQL_DOCKERFILE=${MYSQL_DOCKERFILE:-Dockerfile.mysql}
@@ -398,36 +400,50 @@ MYSQL_BASE_IMAGE=${MYSQL_BASE_IMAGE:-mysql:5.6}
 
 APP_CONTAINER="$PROJECT-app"
 APP_IMAGE=$APP_CONTAINER
-APP_DOCKERFILES=("Dockerfile.app")
-
+APP_DOCKERFILES=("Dockerfile.${BASE_APP_TYPE:-apache}")
 APP_BASE_IMAGE=${APP_BASE_IMAGE:-php:7.2-apache}
+
+
+
 
 if [[ -e "Dockerfile.${APP_TYPE}" ]]; then
     APP_DOCKERFILES+=("Dockerfile.${APP_TYPE}")
 fi
+
 APACHE_DOCUMENT_ROOT=/var/www/html/${APP_ROOT%/}
 
-DOCKER_COMPOSE_ARGS=("-f" "docker-compose.yml")
+DOCKER_COMPOSE_ARGS=("-f" "docker-compose-app-${BASE_APP_TYPE:-apache}.yml")
+
+
+if [[ $MYSQL_DATABASE ]]; then
+     DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-mysql.yml")
+fi
+
 
 if [[ $MYSQL_PORT_MAP ]]; then
      if [[ ! $MYSQL_PORT ]]; then
         IFS=: read -r MYSQL_EXTERNAL_PORT MYSQL_PORT <<< "$MYSQL_PORT_MAP"
      fi
-     DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-mysql.yml")
+     DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-mysql-ports.yml")
 fi
 MYSQL_PORT=${MYSQL_PORT:-3306}
 
+
+
 if [[ $APP_PORT_MAP ]]; then
-     DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-app.yml")
+     DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-app-ports.yml")
 fi
+
 
 if [[ $APP_NETWORK ]]; then
      DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-app-network.yml")
 fi
 
+
 if [[ -e "docker-compose.${PROJECT}.yml" ]]; then
      DOCKER_COMPOSE_ARGS+=("-f" "docker-compose.${PROJECT}.yml")
 fi
+
 
 case $1 in
     prepare)
@@ -439,7 +455,7 @@ case $1 in
             preinstall
         fi
 
-        if [[ $MYSQL_DOCKERFILE ]]; then
+        if [[ $MYSQL_DATABASE ]] && [[ $MYSQL_DOCKERFILE ]]; then
             docker pull ${MYSQL_BASE_IMAGE}
             docker --log-level "error" build \
                 --build-arg MYSQL_BASE_IMAGE=$MYSQL_BASE_IMAGE \
@@ -499,7 +515,7 @@ case $1 in
         ;;
     up)
         [[ $2 == "-d" ]] || progress 10 "Self update"
-        # self_update "$@"
+        self_update "$@"
         if [[ ! -d data/db ]]; then
             mkdir -p data/db/
         fi
