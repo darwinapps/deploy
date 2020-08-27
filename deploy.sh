@@ -288,7 +288,7 @@ function get_latest_db_dump_aws {
          -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
          -e AWS_DEFAULT_REGION=$AWS_REGION \
          $AWSID \
-             aws s3 cp s3://$BUCKET/$FILENAME /mysql-init-script/$FILENAME
+             aws s3 cp s3://$BUCKET/$FILENAME /mysql-init-script/latest.sql.gz
 }
 
 function get_latest_db_dump {
@@ -297,7 +297,7 @@ function get_latest_db_dump {
             mkdir mysql-init-script/
         fi
         if [[ $BUCKET ]]; then
-            get_latest_db_dump_aws
+            get_latest_db_dump_aws $1
         elif [[ $PANTHEON_SITE_NAME ]]; then
             get_latest_db_dump_pantheon
         elif [[ $GENERIC_SSH && $REMOTE_MYSQL ]]; then
@@ -408,6 +408,8 @@ APP_DOCKERFILES=("Dockerfile.app.${BASE_APP_TYPE:-apache}")
 APP_BASE_IMAGE=${APP_BASE_IMAGE:-php:7.2-apache}
 APP_TYPE=${APP_TYPE:-empty}
 
+AWS_FILENAME_DB=${AWS_FILENAME_DB:-latest.sql.gz}
+
 
 if [[ -e "Dockerfile.${APP_TYPE}" ]]; then
     APP_DOCKERFILES+=("Dockerfile.${APP_TYPE}")
@@ -485,7 +487,7 @@ case $1 in
             -f - \
             -t $APP_IMAGE . || exit 1
         progress 50 "Get latest DB Dump"
-        get_latest_db_dump
+        get_latest_db_dump $AWS_FILENAME_DB
 
         progress 60 "Get latest files from GitHub repository"
         if [[ $REPOSITORY ]] &&[[ ! -d webroot/.git ]]; then
@@ -584,9 +586,10 @@ case $1 in
         fi
         ;;
     sync-database)
+        AWS_FILENAME_DB=${2:-${AWS_FILENAME_DB:-latest.sql.gz}}
         rm -rf data/
         rm -rf mysql-init-script/
-        get_latest_db_dump
+        get_latest_db_dump $AWS_FILENAME_DB
         ;;
     sync-files)
         if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
