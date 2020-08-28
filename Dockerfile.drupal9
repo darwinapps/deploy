@@ -1,0 +1,1 @@
+RUN curl -sL https://github.com/drush-ops/drush-launcher/releases/download/0.6.0/drush.phar > /usr/local/bin/drush && chmod a+x /usr/local/bin/drush
