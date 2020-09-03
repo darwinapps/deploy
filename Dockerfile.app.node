@@ -4,20 +4,6 @@ FROM $APP_BASE_IMAGE
 # APP_BASE_IMAGE must be declared again after FROM
 ARG APP_BASE_IMAGE
 
-RUN apt-get update
-RUN apt-get install -y \
-        curl \
-        gnupg
-
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
-
-RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
-
-RUN apt-get install -y \
-        nodejs \
-        yarn
-
 # --- fixing user permissions
 
 ARG USERID
@@ -26,11 +12,12 @@ ARG GROUPID
 RUN bash -c 'if [[ $(getent group $GROUPID | cut -d: -f1) == "" ]]; then groupadd -g $GROUPID mapped; else groupmod --new-name mapped $(getent group $GROUPID | cut -d: -f1); fi'
 RUN bash -c 'if [[ $(id -u mapped 2>/dev/null) == "" ]]; then useradd -r -g mapped -u $USERID --home-dir /var/www/html/ mapped; else usermod -u $USERID mapped; fi'
 
-USER mapped
-
 
 ARG APP_TYPE
 COPY scripts/${APP_TYPE}/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
+
+USER mapped
+
 
 ENTRYPOINT ["docker-entrypoint.sh"]
