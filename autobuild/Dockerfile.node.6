@@ -11,6 +11,6 @@ RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.lis
 RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
 
 RUN apt-get install -y \
-        nodejs \
+        nodejs=6* \
         yarn \
         gulp
