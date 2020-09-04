@@ -4,6 +4,8 @@ services:
     mysql:
         container_name: $MYSQL_CONTAINER
         image: $MYSQL_IMAGE
+        command:
+            - --innodb-log-file-size=16M
         environment:
             MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
             MYSQL_USER: $MYSQL_USER
