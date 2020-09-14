@@ -9,7 +9,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN { \
     echo "innodb_use_native_aio=0"; \
     echo "max_allowed_packet=512M"; \
-    echo "innodb_log_file_size=512M"; \
+    echo "innodb_log_file_size=1024M"; \
     echo "slow_query_log=1"; \
     echo "slow_query_log_file=/var/log/mysql/slow.log"; \
     echo "long_query_time=0.1"; \
