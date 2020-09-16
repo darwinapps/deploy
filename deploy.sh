@@ -401,6 +401,7 @@ MYSQL_CONTAINER="$PROJECT-mysql"
 MYSQL_IMAGE=$MYSQL_CONTAINER
 MYSQL_DOCKERFILE=${MYSQL_DOCKERFILE:-Dockerfile.mysql}
 MYSQL_BASE_IMAGE=${MYSQL_BASE_IMAGE:-mysql:5.6}
+INNODB_LOG_FILE_SIZE=${INNODB_LOG_FILE_SIZE:-"16M"}
 
 APP_CONTAINER="$PROJECT-app"
 APP_IMAGE=$APP_CONTAINER
@@ -467,6 +468,7 @@ case $1 in
         if [[ $MYSQL_DATABASE ]] && [[ $MYSQL_DOCKERFILE ]]; then
             docker pull ${MYSQL_BASE_IMAGE}
             docker --log-level "error" build \
+                --build-arg INNODB_LOG_FILE_SIZE=$INNODB_LOG_FILE_SIZE \
                 --build-arg MYSQL_BASE_IMAGE=$MYSQL_BASE_IMAGE \
                 --build-arg USERID=$USERID \
                 --build-arg GROUPID=$GROUPID \
