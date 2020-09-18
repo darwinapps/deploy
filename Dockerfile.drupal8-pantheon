@@ -25,14 +25,11 @@ RUN (cd ImageMagick-6.7.7-10 && ./configure --with-heic=yes --with-webp=yes && m
 
 RUN yarn global add gulp
 
-RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr
+RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr --with-freetype-dir=/usr
 RUN docker-php-ext-install -j $(( $(nproc) * 2 )) gd pdo pdo_mysql opcache zip
 
-RUN pecl install imagick
-RUN docker-php-ext-enable imagick
+# RUN pecl install imagick
+# RUN docker-php-ext-enable imagick
 
 RUN (cd ~/ && (curl -s https://getcomposer.org/installer | php)) \
     && mv ~/composer.phar /usr/bin/composer
-
-
-
