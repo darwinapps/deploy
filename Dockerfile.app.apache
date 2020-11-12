@@ -97,8 +97,9 @@ COPY ./geoip/GeoLiteCity.dat.gz /tmp/
 RUN mkdir -p /usr/share/GeoIP/ && gunzip -c /tmp/GeoLiteCity.dat.gz > /usr/share/GeoIP/GeoIPCity.dat && rm /tmp/GeoLiteCity.dat.gz
 #&& curl -sL --output - https://github.com/darwinapps/deploy/raw/master/geoip/GeoLiteCity.dat.gz | gunzip - > /usr/share/GeoIP/GeoIPCity.dat
 
-RUN (cd ~/ && (curl -s https://getcomposer.org/installer | php)) \
-    && mv ~/composer.phar /usr/bin/composer
+RUN (cd ~/ && (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer))
+
+RUN (cd ~/ && (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer-v1 --version=1.10.16))
 
 # --- fixing user permissions
 
