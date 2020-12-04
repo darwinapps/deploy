@@ -3,6 +3,8 @@ FROM ubuntu:18.04
 ENV TZ=Europe/Minsk
 ENV DEBIAN_FRONTEND noninteractive
 
+ARG VERS_COMPOSER
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-transport-https \
     apt-utils \
@@ -56,5 +58,4 @@ RUN phpenmod -v php7.1 -s ALL opcache-recommended && phpenmod -v php7.1 -s ALL m
 
 RUN a2enmod php7.1 rewrite expires
 
-RUN (cd ~/ && (curl -s https://getcomposer.org/installer | php)) \
-    && mv ~/composer.phar /usr/bin/composer
+RUN (cd ~/ && (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer --version=$VERS_COMPOSER))

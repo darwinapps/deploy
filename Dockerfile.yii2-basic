@@ -1,4 +1,5 @@
-RUN (cd ~/ && (curl -s https://getcomposer.org/installer | php)) \
-    && mv ~/composer.phar /usr/bin/composer
+ARG VERS_COMPOSER
+
+RUN (cd ~/ && (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer --version=$VERS_COMPOSER))
 
 #RUN composer global require "fxp/composer-asset-plugin:~1.1.2" --no-plugins

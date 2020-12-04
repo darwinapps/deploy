@@ -5,6 +5,7 @@ FROM $APP_BASE_IMAGE
 ARG APP_BASE_IMAGE
 
 ARG PHP_SHORT_OPEN_TAG
+ARG VERS_COMPOSER
 
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update
@@ -97,9 +98,9 @@ COPY ./geoip/GeoLiteCity.dat.gz /tmp/
 RUN mkdir -p /usr/share/GeoIP/ && gunzip -c /tmp/GeoLiteCity.dat.gz > /usr/share/GeoIP/GeoIPCity.dat && rm /tmp/GeoLiteCity.dat.gz
 #&& curl -sL --output - https://github.com/darwinapps/deploy/raw/master/geoip/GeoLiteCity.dat.gz | gunzip - > /usr/share/GeoIP/GeoIPCity.dat
 
-RUN (cd ~/ && (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer))
+# RUN (cd ~/ && (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer))
 
-RUN (cd ~/ && (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer-v1 --version=1.10.16))
+RUN (cd ~/ && (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer --version=$VERS_COMPOSER))
 
 # --- fixing user permissions
 

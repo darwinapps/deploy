@@ -1,3 +1,5 @@
+ARG VERS_COMPOSER
+
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
 
@@ -24,5 +26,4 @@ RUN docker-php-ext-install -j $(( $(nproc) * 2 )) gd pdo pdo_mysql opcache zip
 RUN pecl install imagick
 RUN docker-php-ext-enable imagick
 
-RUN (cd ~/ && (curl -s https://getcomposer.org/installer | php)) \
-    && mv ~/composer.phar /usr/bin/composer
+RUN (cd ~/ && (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer --version=$VERS_COMPOSER))
