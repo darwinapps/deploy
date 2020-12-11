@@ -8,6 +8,24 @@ if [[ $1 == '-v' || $1 == 'dump-database' ]]; then
 else LOGFILE="debug.log"; exec &>>$LOGFILE
 fi
 
+function self_update {
+    #return
+    #self-update
+    printf "\e[1;32mChecking for a new version of me...\n\e[0m"
+    git fetch
+    if [[ -n $(git diff --name-only origin/master) ]]; then
+       printf "\e[1;34mFound a new version of me, updating...\n\e[0m"
+       git reset --hard origin/master
+       printf "\e[1;34mRestarting...\n\e[0m"
+       if [ -z "$LOGFILE" ]; then
+           exec "$0" "-v" "$@"
+       else
+           exec "$0" "$@"
+       fi
+       exit 1
+    fi
+}
+
 function delay()
 {
     sleep 0.1;
@@ -347,24 +365,6 @@ function extract_remote_files {
         [[ ! -d webroot/$DIR ]] && mkdir -p webroot/$DIR
         echo "Unpacking files ..."
         tar xf remote-files/latest.tgz -C webroot/$DIR $( [[ $STRIP -gt 0 ]] && echo "--strip-components=$STRIP" ) 
-    fi
-}
-
-function self_update {
-    #return
-    #self-update
-    echo "Checking for a new version of me..."
-    git fetch
-    if [[ -n $(git diff --name-only origin/master) ]]; then
-       echo "Found a new version of me, updating..."
-       git reset --hard origin/master
-       echo "Restarting..."
-       if [ -z "$LOGFILE" ]; then
-           exec "$0" "-v" "$@"
-       else
-           exec "$0" "$@"
-       fi
-       exit 1
     fi
 }
 
