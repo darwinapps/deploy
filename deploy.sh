@@ -38,7 +38,10 @@ function delay()
 CURRENT_PROGRESS=0
 function progress()
 {
-    if [ -z "$LOGFILE" ]; then return; fi
+    if [ -z "$LOGFILE" ]; then
+        echo_green "$2...";
+        return;
+    fi
 
     PARAM_PROGRESS=$1;
     PARAM_PHASE=$( printf "%-60s%-4s"  "${2:0:60}");
@@ -183,7 +186,6 @@ USER mapped
 function get_latest_files_from_ssh {
     if [[ ! -d webroot/$FILES_DIR ]]; then mkdir -p webroot/$FILES_DIR; fi
     progress 10 "Upload files synchronization from generic SSH..."
-    echo_green "Upload files synchronization from generic SSH...";
     
     # username:password@hostname:port
     IFS=@ read -r USERNAMEPASSWORD HOSTPORTPATH <<< "${GENERIC_SSH}"
@@ -462,7 +464,7 @@ fi
 
 case $1 in
     prepare)
-        progress 10 Initialize
+        progress 5 Initialize
         self_update "$@"
 
         if [[ $(declare -F preinstall) ]]; then
@@ -474,8 +476,14 @@ case $1 in
             fi
         fi
 
+        
         if [[ $MYSQL_DATABASE ]] && [[ $MYSQL_DOCKERFILE ]]; then
+            progress 10 "Docker pull"
+            printf "\n\e[1;34m"
             docker pull ${MYSQL_BASE_IMAGE}
+            printf "\n\e[0m"
+            
+            progress 20 "Docker build"
             docker --log-level "error" build \
                 --build-arg INNODB_LOG_FILE_SIZE=$INNODB_LOG_FILE_SIZE \
                 --build-arg MYSQL_BASE_IMAGE=$MYSQL_BASE_IMAGE \
@@ -483,10 +491,15 @@ case $1 in
                 --build-arg GROUPID=$GROUPID \
                 -f $MYSQL_DOCKERFILE \
                 -t $MYSQL_IMAGE . || exit 1
+            printf "\n"
         fi
-        progress 10 "docker pull"
+
+        progress 30 "Docker pull"
+        printf "\n\e[1;34m"
         docker pull ${APP_BASE_IMAGE}
-        progress 20 "docker build"
+        printf "\n\e[0m"
+
+        progress 40 "Docker build"
         cat ${APP_DOCKERFILES[@]} | docker --log-level "error" build \
             --build-arg APP_BASE_IMAGE=$APP_BASE_IMAGE \
             --build-arg USERID=$USERID \
@@ -498,6 +511,8 @@ case $1 in
             --build-arg VERS_COMPOSER=$VERS_COMPOSER \
             -f - \
             -t $APP_IMAGE . || exit 1
+        printf "\n"
+        
         progress 50 "Get latest DB Dump"
         get_latest_db_dump $AWS_FILENAME_DB
 
