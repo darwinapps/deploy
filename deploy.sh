@@ -9,14 +9,14 @@ else LOGFILE="debug.log"; exec &>>$LOGFILE
 fi
 
 function self_update {
-    #return
+    # return
     #self-update
-    printf "\e[1;32mChecking for a new version of me...\n\e[0m"
+    echo_green "Checking for a new version of me..."
     git fetch
     if [[ -n $(git diff --name-only origin/master) ]]; then
-       printf "\e[1;34mFound a new version of me, updating...\n\e[0m"
+       echo_blue "Found a new version of me, updating..."
        git reset --hard origin/master
-       printf "\e[1;34mRestarting...\n\e[0m"
+       echo_blue "Restarting..."
        if [ -z "$LOGFILE" ]; then
            exec "$0" "-v" "$@"
        else
@@ -25,6 +25,10 @@ function self_update {
        exit 1
     fi
 }
+
+function echo_green { printf "\e[1;32m${1}\n\e[0m"; }
+function echo_blue  { printf "\e[1;34m${1}\n\e[0m"; }
+function echo_red   { printf "\e[1;31m${1}\n\e[0m"; }
 
 function delay()
 {
@@ -179,8 +183,8 @@ USER mapped
 function get_latest_files_from_ssh {
     if [[ ! -d webroot/$FILES_DIR ]]; then mkdir -p webroot/$FILES_DIR; fi
     progress 10 "Upload files synchronization from generic SSH..."
-    echo "Upload files synchronization from generic SSH..."
-
+    echo_green "Upload files synchronization from generic SSH...";
+    
     # username:password@hostname:port
     IFS=@ read -r USERNAMEPASSWORD HOSTPORTPATH <<< "${GENERIC_SSH}"
     IFS=: read -r USERNAME PASSWORD <<< "${USERNAMEPASSWORD}"
@@ -210,7 +214,7 @@ function get_latest_files_from_aws {
         fi
 
         AWSID=$(get_aws_cli)
-        echo "Downloading files from AWS..."
+        echo_green "Downloading files from AWS..."
         docker run --rm -it -v "$PWD/remote-files/:/remote-files/" \
             -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
             -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
@@ -275,7 +279,7 @@ function get_latest_db_dump_generic_ssh {
     IFS=/ read -r _MYSQL_HOSTPORT _MYSQL_PATH <<< "${_MYSQL_HOSTPORTPATH}"
     IFS=: read -r _MYSQL_HOST _MYSQL_PORT <<< "${_MYSQL_HOSTPORT}"
 
-    echo "Downloading database dump from generic SSH..."
+    echo_green "Downloading database dump from generic SSH..."
     # ssh -p $PORT $USERNAME@$HOST mysqldump -u"${_MYSQL_USERNAME}" -p"${_MYSQL_PASSWORD}" -h"${_MYSQL_HOST}" -P"${_MYSQL_PORT}" "${_MYSQL_PATH}" \
     #     | gzip > mysql-init-script/$FILENAME
 
@@ -302,7 +306,7 @@ EOD
 function get_latest_db_dump_aws {
     FILENAME=${1:-latest.sql.gz}
     AWSID=$(get_aws_cli)
-    echo "Downloading database dump from AWS..."
+    echo_green "Downloading database dump from AWS..."
     docker run --rm -it -v "$PWD/mysql-init-script/:/mysql-init-script/" \
          -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
          -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
@@ -332,7 +336,7 @@ function upload_dump {
     BUCKET=$1
     FILENAME=$2
     AWSCLI=$(get_aws_cli)
-    echo "Uploading $FILENAME to AWS..."
+    echo_green "Uploading $FILENAME to AWS..."
 
     docker run --rm -it -v "$PWD/backup/:/backup/" \
              -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
@@ -363,7 +367,7 @@ function extract_remote_files {
     STRIP=${2:0}
     if [[ -f remote-files/latest.tgz ]] && [[ $DIR ]]; then
         [[ ! -d webroot/$DIR ]] && mkdir -p webroot/$DIR
-        echo "Unpacking files ..."
+        echo_green "Unpacking files ..."
         tar xf remote-files/latest.tgz -C webroot/$DIR $( [[ $STRIP -gt 0 ]] && echo "--strip-components=$STRIP" ) 
     fi
 }
@@ -383,13 +387,13 @@ USERID=$(id -u)
 GROUPID=$(id -g)
 
 if [[ $USERID == "0" ]]; then
-    echo "Running as root is not supported. Please run the following command to add user to the docker group:"
-    echo "    \$ sudo usermod -aG docker \$USER"
+    echo_red "Running as root is not supported. Please run the following command to add user to the docker group:"
+    echo_red "    \$ sudo usermod -aG docker \$USER"
     exit 1;
 fi
 
 
-[[ ! -f ./config ]] && echo "No config file found. Exiting ..." && exit 1;
+[[ ! -f ./config ]] && echo_red "No config file found. Exiting ..." && exit 1;
 
 source ./config
 
@@ -462,7 +466,7 @@ case $1 in
         self_update "$@"
 
         if [[ $(declare -F preinstall) ]]; then
-            echo "running preinstall function";
+            echo_green "running preinstall function";
             preinstall
 
             if [[ -e "Dockerfile.${PROJECT}" ]]; then
@@ -513,7 +517,7 @@ case $1 in
         fi
 
         if [[ $(declare -F postinstall) ]]; then
-            echo "running postinstall function";
+            echo_green "running postinstall function";
             docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} -f docker-compose-app-user.yml \
                 run --no-deps --rm webapp \
                     bash -c "source /tmp/config && HOME=/tmp && postinstall"
@@ -538,7 +542,7 @@ case $1 in
         fi
         [[ $2 == "-d" ]] || progress 20 "Check git tracked"
         if [[ ! -d webroot/.git ]]; then
-            echo "Content in your webroot is not tracked by git"
+            echo_red "Content in your webroot is not tracked by git"
         fi
         if [[ ! -d log/apache2 ]]; then
              mkdir -p log/apache2
@@ -589,7 +593,7 @@ case $1 in
         if [[ $(docker ps -f id=$(docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} ps -q mysql) -q) != ""  ]]; then
             docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec -T mysql mysqldump -uroot $MYSQL_DATABASE "${@:2}"
         else
-            echo "MYSQL container is not running"
+            echo_red "MYSQL container is not running"
             exit 1
         fi
         ;;
@@ -620,7 +624,7 @@ case $1 in
         if [[ $(docker ps -f id=$(docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} ps -q mysql) -q) != ""  ]]; then
             docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec -T mysql mysqldump -uroot $MYSQL_DATABASE | gzip - > backup/$FILENAME
         else
-            echo "MYSQL container is not running"
+            echo_red "MYSQL container is not running"
             exit 1
         fi
         upload_dump $BUCKET $FILENAME
