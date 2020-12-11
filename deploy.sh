@@ -5,7 +5,7 @@ exec 3>&1
 LOGFILE=""
 if [[ $1 == '-v' || $1 == 'dump-database' ]]; then
     if [[ $1 == '-v' ]]; then shift; fi
-else LOGFILE="debug.log"; exec &>>$LOGFILE
+else LOGFILE="debug.log"; exec &>$LOGFILE
 fi
 
 function self_update {
