@@ -1,6 +1,8 @@
 #!/bin/bash
 
 exec 3>&1
+
+LOGFILE=""
 if [[ $1 == '-v' || $1 == 'dump-database' ]]; then
     if [[ $1 == '-v' ]]; then shift; fi
 else LOGFILE="debug.log"; exec &>>$LOGFILE
@@ -14,10 +16,10 @@ function delay()
 CURRENT_PROGRESS=0
 function progress()
 {
-    if [[ $LOGFILE == /dev/stdout ]]; then return; fi
+    if [ -z "$LOGFILE" ]; then return; fi
 
     PARAM_PROGRESS=$1;
-	PARAM_PHASE=$( printf "%-60s%-4s"  "${2:0:60}");
+    PARAM_PHASE=$( printf "%-60s%-4s"  "${2:0:60}");
 
     if [ $CURRENT_PROGRESS -le 0 -a $PARAM_PROGRESS -ge 0 ]  ; then echo -ne "[..........................] (0%)  $PARAM_PHASE \r"  ; delay; fi;
     if [ $CURRENT_PROGRESS -le 5 -a $PARAM_PROGRESS -ge 5 ]  ; then echo -ne "[#.........................] (5%)  $PARAM_PHASE \r"  ; delay; fi;
@@ -357,11 +359,11 @@ function self_update {
        echo "Found a new version of me, updating..."
        git reset --hard origin/master
        echo "Restarting..."
-       if [[ $LOGFILE == /dev/stdout ]]; then 
+       if [ -z "$LOGFILE" ]; then
            exec "$0" "-v" "$@"
        else
            exec "$0" "$@"
-       fi 
+       fi
        exit 1
     fi
 }
