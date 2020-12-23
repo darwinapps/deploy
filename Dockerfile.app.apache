@@ -6,6 +6,8 @@ ARG APP_BASE_IMAGE
 
 ARG PHP_SHORT_OPEN_TAG
 ARG VERS_COMPOSER
+ARG MAILGUN_USER
+ARG MAILGUN_PASSWORD
 
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update
@@ -30,7 +32,8 @@ RUN apt-get install -y --no-install-recommends \
     wget \
     ssh \
     imagemagick \
-    libmagickwand-dev
+    libmagickwand-dev \
+    msmtp-mta
 
 RUN apt-get install -y --no-install-recommends mysql-client || apt-get install -y --no-install-recommends default-mysql-client
     
@@ -92,6 +95,26 @@ RUN { \
     echo 'error_log=/dev/stderr'; \
     echo 'date.timezone = "UTC"'; \
 } > /usr/local/etc/php/conf.d/php.ini
+
+RUN if [ -n "${MAILGUN_USER}" ] ; then \
+    { \
+    echo 'sendmail_path = "/usr/bin/msmtp -t"'; \
+} >> /usr/local/etc/php/conf.d/php.ini; fi
+
+RUN if [ -n "${MAILGUN_USER}" ] ; then \
+    { \
+    echo "defaults" ; \
+    echo "port 587" ; \
+    echo "tls on" ; \
+    echo "tls_trust_file /etc/ssl/certs/ca-certificates.crt" ; \
+    echo "account mailgun" ; \
+    echo "host smtp.mailgun.org" ; \
+    echo "from $MAILGUN_USER" ; \
+    echo "auth on" ; \
+    echo "user $MAILGUN_USER" ; \
+    echo "password $MAILGUN_PASSWORD" ; \
+    echo "account default : mailgun" ; \
+} > /etc/msmtprc; fi
 
 RUN a2enmod rewrite expires
 COPY ./geoip/GeoLiteCity.dat.gz /tmp/

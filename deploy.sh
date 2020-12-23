@@ -9,6 +9,7 @@ else LOGFILE="debug.log"; exec &>$LOGFILE
 fi
 
 function self_update {
+    if [[ $SELFUPDATE == 'off' || $SELFUPDATE == 'OFF' ]]; then echo_red 'Self update off'; return; fi
     # return
     #self-update
     echo_green "Checking for a new version of me..."
@@ -418,6 +419,7 @@ APP_BASE_IMAGE=${APP_BASE_IMAGE:-php:7.2-apache}
 APP_TYPE=${APP_TYPE:-empty}
 
 VERS_COMPOSER=${COMPOSER:-1.10.16}
+SELFUPDATE=${UPDATE:-"on"}
 
 
 AWS_FILENAME_DB=${AWS_FILENAME_DB:-latest.sql.gz}
@@ -509,10 +511,12 @@ case $1 in
             --build-arg APACHE_DOCUMENT_ROOT=$APACHE_DOCUMENT_ROOT \
             --build-arg PHP_SHORT_OPEN_TAG=$PHP_SHORT_OPEN_TAG \
             --build-arg VERS_COMPOSER=$VERS_COMPOSER \
+            --build-arg MAILGUN_USER=$MAILGUN_USER \
+            --build-arg MAILGUN_PASSWORD=$MAILGUN_PASSWORD \
             -f - \
             -t $APP_IMAGE . || exit 1
         printf "\n"
-        
+
         progress 50 "Get latest DB Dump"
         get_latest_db_dump $AWS_FILENAME_DB
 

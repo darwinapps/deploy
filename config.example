@@ -1,3 +1,12 @@
+# UPDATE="off"                  enables or disables automatic self-update deploy script, default is enable
+# DEBUG=1                       enabling deploy logging, default is disable
+# MAILGUN_USER="user"           username for sending emails from under the docker using MailGun
+# MAILGUN_PASSWORD="password"   password for sending emails from under the docker using MailGun
+
+
+
+
+
 APP_TYPE="wordpress"
 PROJECT="project"
 REPOSITORY="git@github.com:darwinapps/project.git"
@@ -10,6 +19,7 @@ MYSQL_PORT_MAP=3306:3306
 APP_ROOT="" # relative to ./webroot/, no leading slash, with ending slash
 APP_PORT_MAP=80:80
 DEBUG=1
+UPDATE="off"
 
 MYSQL_USER=wordpress
 MYSQL_PASSWORD=wordpress
