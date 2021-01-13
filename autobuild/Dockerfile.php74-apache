@@ -20,7 +20,8 @@ RUN apt-get install -y \
     php7.4-mbstring \
     php7.4-imagick \
     php7.4-dev \
-    php-fpm \
+    php7.4-xml \
+    php7.4-fpm \
     libapache2-mod-fcgid \
     apache2 \
     curl \
