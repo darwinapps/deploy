@@ -1,0 +1,55 @@
+version: 2.1
+jobs:
+  build:
+    machine:
+      image: ubuntu-2004:202010-01
+    
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - run:
+          name: Authorization in Docker Registry
+          command: |
+            echo "$REGISTRY_PASS" | docker login --username $REGISTRY_USER --password-stdin https://$REGISTRY_HOST
+
+      - run:
+          name: Build docker image
+          command: |
+            docker build -t $REGISTRY_HOST/apache-php:7.4 -f ./autobuild/Dockerfile.php74-apache .
+
+      - run:
+          name: Push docker image to Docker Registry
+          command: |
+            docker push $REGISTRY_HOST/apache-php:7.4
+
+      - run:
+          name: Send message to Committer
+          command: |
+            Committer=$(git log -1 --pretty=format:"%ce")
+            Commithash=$(git log -1 --pretty=format:"%h")
+            Commitstr=$(git log -1 --pretty=format:"%s")
+
+            t1=$(date +"%H:%M:%S")
+            t2=$(git log -1 --pretty=format:"%cd" --date=rfc2822)
+            t2=$(date -u -d "$t2" +"%H:%M:%S")
+            t3=$(date -u -d "0 $(date -u -d "$t1" +"%s") sec - $(date -u -d "$t2" +"%s") sec" +"%H:%M:%S")
+
+            Subjectstr='Commit '$Commithash' ('$Commitstr') is build succefully ('$t3')!'
+
+            curl -s --user $MAILGUN_USER\
+              $MAILGUN_HOST\
+              -F from=$MAILGUN_FROM\
+              -F to=$Committer\
+              -F subject="""$Subjectstr"""\
+              -F text='The build on the branch '$CIRCLE_BRANCH' in the project '$CIRCLE_PROJECT_USERNAME'/'$CIRCLE_PROJECT_REPONAME' on CircleCI completed succefully!'
+
+workflows:
+  main:       
+    jobs:
+      - build:
+          filters:
+            branches:
+              only:
+                - master
