@@ -38,9 +38,9 @@ jobs:
 
             Subjectstr='Commit '$Commithash' ('$Commitstr') is build succefully ('$t3')!'
 
-            curl -s --user $MAILGUN_USER\
+            curl -s --user '$MAILGUN_USER'\
               $MAILGUN_HOST\
-              -F from=$MAILGUN_FROM\
+              -F from='$MAILGUN_FROM'\
               -F to=$Committer\
               -F subject="""$Subjectstr"""\
               -F text='The build on the branch '$CIRCLE_BRANCH' in the project '$CIRCLE_PROJECT_USERNAME'/'$CIRCLE_PROJECT_REPONAME' on CircleCI completed succefully!'
