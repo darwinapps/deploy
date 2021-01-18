@@ -24,6 +24,16 @@ jobs:
           command: |
             docker push $REGISTRY_HOST/apache-php:7.4
 
+
+
+      - run:
+          command: echo "export onBUILD=0" >> $BASH_ENV
+          when: on_success
+
+      - run:
+          command: echo "export onBUILD=1" >> $BASH_ENV
+          when: on_fail
+
       - run:
           name: Send message to Committer
           command: |
@@ -36,14 +46,22 @@ jobs:
             t2=$(date -u -d "$t2" +"%H:%M:%S")
             t3=$(date -u -d "0 $(date -u -d "$t1" +"%s") sec - $(date -u -d "$t2" +"%s") sec" +"%H:%M:%S")
 
-            Subjectstr='Commit '$Commithash' ('$Commitstr') is build succefully ('$t3')!'
+            Subjectstr='SUCCESS! Commit '$Commithash' ('$Commitstr') was built successfully ('$t3')!'
+            Messagestr='The build on the branch '$CIRCLE_BRANCH' in the project '$CIRCLE_PROJECT_USERNAME'/'$CIRCLE_PROJECT_REPONAME' on CircleCI completed successfully!'
+
+            if [ $onBUILD -eq 1 ]; then
+              Subjectstr='FAILED! Commit '$Commithash' ('$Commitstr') was built unsuccessfully ('$t3')!'
+              Messagestr='The build on the branch '$CIRCLE_BRANCH' in the project '$CIRCLE_PROJECT_USERNAME'/'$CIRCLE_PROJECT_REPONAME' on CircleCI failed! Please contact the devops engineer of DarwinApps'
+            fi
 
             curl -s --user $MAILGUN_USER\
               $MAILGUN_HOST\
               -F from='CircleCI <'$MAILGUN_FROM'>'\
               -F to=$Committer\
               -F subject="""$Subjectstr"""\
-              -F text='The build on the branch '$CIRCLE_BRANCH' in the project '$CIRCLE_PROJECT_USERNAME'/'$CIRCLE_PROJECT_REPONAME' on CircleCI completed succefully!'
+              -F text=Messagestr
+          when: always
+
 
 workflows:
   main:
