@@ -49,9 +49,10 @@ jobs:
             Subjectstr='SUCCESS! Commit '$Commithash' ('$Commitstr') was built successfully ('$t3')!'
             Messagestr='The build on the branch '$CIRCLE_BRANCH' in the project '$CIRCLE_PROJECT_USERNAME'/'$CIRCLE_PROJECT_REPONAME' on CircleCI completed successfully!'
 
-            if [ $onBUILD -eq 1 ]; then
+            if [ $onBUILD -eq 0 ]; then
               Subjectstr='FAILED! Commit '$Commithash' ('$Commitstr') was built unsuccessfully ('$t3')!'
-              Messagestr='The build on the branch '$CIRCLE_BRANCH' in the project '$CIRCLE_PROJECT_USERNAME'/'$CIRCLE_PROJECT_REPONAME' on CircleCI failed! Please contact the devops engineer of DarwinApps'
+              Messagestr=$(printf "%s\r\n%s\n" "The build on the branch $CIRCLE_BRANCH in the project $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME on CircleCI failed!"\
+                                               "Please contact the devops engineer of DarwinApps")
             fi
 
             curl -s --user 'api:'$MAILGUN_APIKEY\
