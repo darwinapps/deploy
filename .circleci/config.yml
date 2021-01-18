@@ -3,7 +3,7 @@ jobs:
   build:
     machine:
       image: ubuntu-2004:202010-01
-    
+
     working_directory: ~/repo
 
     steps:
@@ -40,13 +40,13 @@ jobs:
 
             curl -s --user $MAILGUN_USER\
               $MAILGUN_HOST\
-              -F from=$MAILGUN_FROM\
+              -F from='CircleCI <'$MAILGUN_FROM'>'\
               -F to=$Committer\
               -F subject="""$Subjectstr"""\
               -F text='The build on the branch '$CIRCLE_BRANCH' in the project '$CIRCLE_PROJECT_USERNAME'/'$CIRCLE_PROJECT_REPONAME' on CircleCI completed succefully!'
 
 workflows:
-  main:       
+  main:
     jobs:
       - build:
           filters:
