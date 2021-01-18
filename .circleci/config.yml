@@ -54,8 +54,8 @@ jobs:
               Messagestr='The build on the branch '$CIRCLE_BRANCH' in the project '$CIRCLE_PROJECT_USERNAME'/'$CIRCLE_PROJECT_REPONAME' on CircleCI failed! Please contact the devops engineer of DarwinApps'
             fi
 
-            curl -s --user $MAILGUN_USER\
-              $MAILGUN_HOST\
+            curl -s --user 'api:'$MAILGUN_APIKEY\
+              https://api.mailgun.net/v3/$MAILGUN_DOMAIN/messages\
               -F from='CircleCI <'$MAILGUN_FROM'>'\
               -F to=$Committer\
               -F subject="""$Subjectstr"""\
