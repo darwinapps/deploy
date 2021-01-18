@@ -17,12 +17,12 @@ jobs:
       - run:
           name: Build docker image
           command: |
-            docker builda -t $REGISTRY_HOST/apache-php:7.4 -f ./autobuild/Dockerfile.php74-apache .
+            docker build -t $REGISTRY_HOST/apache-php:7.4 -f ./autobuild/Dockerfile.php74-apache .
 
       - run:
           name: Push docker image to Docker Registry
           command: |
-            docker pusha $REGISTRY_HOST/apache-php:7.4
+            docker push $REGISTRY_HOST/apache-php:7.4
 
 
 
@@ -59,7 +59,7 @@ jobs:
               -F from='CircleCI <'$MAILGUN_FROM'>'\
               -F to=$Committer\
               -F subject="""$Subjectstr"""\
-              -F text=$Messagestr
+              -F text="""$Messagestr"""
           when: always
 
 
