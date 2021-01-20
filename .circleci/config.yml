@@ -19,7 +19,6 @@ jobs:
           command: |
             DIR_DOCKER_FILES="autobuild"
             DIFF_FILES=$(git diff --numstat HEAD^ | grep $DIR_DOCKER_FILES | awk '{print $3}')
-            echo "export DIFF_FILES="$DIFF_FILES >> $BASH_ENV
 
             for FILE in ${DIFF_FILES[@]}; do
                 REGISTRY_TAG=$(grep "REGISTRY_TAG" $FILE | awk '{print $3}')
