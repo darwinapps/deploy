@@ -15,16 +15,27 @@ jobs:
             echo "$REGISTRY_PASS" | docker login --username $REGISTRY_USER --password-stdin https://$REGISTRY_HOST
 
       - run:
-          name: Build docker image
+          name: Build docker images
           command: |
-            docker build -t $REGISTRY_HOST/apache-php:7.4 -f ./autobuild/Dockerfile.php74-apache .
+            DIR_DOCKER_FILES="autobuild"
+            DIFF_FILES=$(git diff --numstat HEAD^ | grep $DIR_DOCKER_FILES | awk '{print $3}')
+            echo "export DIFF_FILES="$DIFF_FILES >> $BASH_ENV
+
+            for FILE in ${DIFF_FILES[@]}; do
+                REGISTRY_TAG=$(grep "REGISTRY_TAG" $FILE | awk '{print $3}')
+                if [ ! -z "$REGISTRY_TAG" ]; then
+                  REGISTRY_TAGS+=($REGISTRY_TAG)
+                  docker build -t $REGISTRY_HOST/$REGISTRY_TAG -f ./$FILE .
+                fi
+            done
+            echo "export REGISTRY_TAGS="$REGISTRY_TAGS >> $BASH_ENV
 
       - run:
-          name: Push docker image to Docker Registry
+          name: Push docker images to Docker Registry
           command: |
-            docker push $REGISTRY_HOST/apache-php:7.4
-
-
+            for REGISTRY_TAG in ${REGISTRY_TAGS[@]}; do
+              docker push $REGISTRY_HOST/$REGISTRY_TAG
+            done
 
       - run:
           command: echo "export onBUILD=0" >> $BASH_ENV
