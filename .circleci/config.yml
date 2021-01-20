@@ -27,8 +27,7 @@ jobs:
                   # docker build -t $REGISTRY_HOST/$REGISTRY_TAG -f ./$FILE .
                 fi
             done
-            echo $REGISTRY_TAGS
-            echo "export REGISTRY_TAGS="$REGISTRY_TAGS >> $BASH_ENV
+            echo "export REGISTRY_TAGS="${REGISTRY_TAGS[@]} >> $BASH_ENV
 
       - run:
           name: Push docker images to Docker Registry
