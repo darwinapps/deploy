@@ -24,7 +24,7 @@ jobs:
                 REGISTRY_TAG=$(grep "REGISTRY_TAG" $FILE | awk '{print $3}')
                 if [ ! -z "$REGISTRY_TAG" ]; then
                   REGISTRY_TAGS+=($REGISTRY_TAG)
-                  # docker build -t $REGISTRY_HOST/$REGISTRY_TAG -f ./$FILE .
+                  docker build -t $REGISTRY_HOST/$REGISTRY_TAG -f ./$FILE .
                 fi
             done
             echo "export REGISTRY_TAGS=\"${REGISTRY_TAGS[@]}\"" >> $BASH_ENV
@@ -33,8 +33,7 @@ jobs:
           name: Push docker images to Docker Registry
           command: |
             for REGISTRY_TAG in ${REGISTRY_TAGS[@]}; do
-              echo $REGISTRY_TAG
-              # docker push $REGISTRY_HOST/$REGISTRY_TAG
+              docker push $REGISTRY_HOST/$REGISTRY_TAG
             done
 
       - run:
