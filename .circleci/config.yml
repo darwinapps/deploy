@@ -21,19 +21,19 @@ jobs:
             DIFF_FILES=$(git diff --numstat HEAD^ | grep $DIR_DOCKER_FILES | awk '{print $3}')
 
             for FILE in ${DIFF_FILES[@]}; do
-                REGISTRY_TAG=$(grep "REGISTRY_TAG" $FILE | awk '{print $3}')
-                if [ ! -z "$REGISTRY_TAG" ]; then
-                  REGISTRY_TAGS+=($REGISTRY_TAG)
-                  docker build -t $REGISTRY_HOST/$REGISTRY_TAG -f ./$FILE .
+                IMAGE_TAG=$(grep "IMAGE_TAG" $FILE | awk '{print $3}')
+                if [ ! -z "$IMAGE_TAG" ]; then
+                  IMAGE_TAGS+=($IMAGE_TAG)
+                  docker build -t $REGISTRY_HOST/$IMAGE_TAG -f ./$FILE .
                 fi
             done
-            echo "export REGISTRY_TAGS=\"${REGISTRY_TAGS[@]}\"" >> $BASH_ENV
+            echo "export IMAGE_TAGS=\"${IMAGE_TAGS[@]}\"" >> $BASH_ENV
 
       - run:
           name: Push docker images to Docker Registry
           command: |
-            for REGISTRY_TAG in ${REGISTRY_TAGS[@]}; do
-              docker push $REGISTRY_HOST/$REGISTRY_TAG
+            for IMAGE_TAG in ${IMAGE_TAGS[@]}; do
+              docker push $REGISTRY_HOST/$IMAGE_TAG
             done
 
       - run:
