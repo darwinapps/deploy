@@ -1,4 +1,3 @@
-# REGISTRY_TAG apache-php:7.4
 FROM ubuntu:18.04
 
 ENV TZ=Europe/Minsk
@@ -29,7 +28,26 @@ RUN apt-get install -y \
     git \
     gzip \
     unzip \
-    zip
+    zip \
+    less \
+    libwebp-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libfreetype6-dev \
+    libgeoip-dev \
+    libmcrypt-dev \
+    libzip-dev \
+    tcpdump \
+    telnet \
+    net-tools \
+    nano \
+    wget \
+    ssh \
+    imagemagick \
+    libmagickwand-dev \
+    msmtp-mta
+
+RUN apt-get install -y --no-install-recommends mysql-client || apt-get install -y --no-install-recommends default-mysql-client
 
 RUN { \
     echo 'opcache.memory_consumption=128'; \
