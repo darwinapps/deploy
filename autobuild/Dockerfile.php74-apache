@@ -1,4 +1,4 @@
-# REGISTRY_TAG apache-php:7.4
+# IMAGE_TAG apache-php:7.4
 FROM ubuntu:18.04
 
 ENV TZ=Europe/Minsk
