@@ -20,7 +20,7 @@ jobs:
             DIR_DOCKER_FILES="autobuild"
             DIFF_FILES=$(git diff --numstat HEAD^ | grep $DIR_DOCKER_FILES | awk '{print $3}')
 
-            if [[ ! ${DIFF_FILES[@]} ]]; then circleci-agent step halt; fi
+            if [ ! ${#DIFF_FILES[@]} -eq 0 ]; then circleci-agent step halt; fi
 
             for FILE in ${DIFF_FILES[@]}; do
                 IMAGE_TAG=$(grep "IMAGE_TAG" $FILE | awk '{print $3}')
@@ -30,7 +30,6 @@ jobs:
                 fi
             done
             echo "export IMAGE_TAGS=\"${IMAGE_TAGS[@]}\"" >> $BASH_ENV
-
 
       - run:
           name: Push docker images to Docker Registry
