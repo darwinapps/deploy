@@ -77,7 +77,7 @@ RUN { \
 
 RUN phpenmod -v php7.4 -s ALL opcache-recommended && phpenmod -v php7.4 -s ALL mbstring
 
-RUN ln -s /lib/systemd/system/php7.4-fpm.service /lib/systemd/system/php-fpm.service
+RUN cp /etc/init.d/php7.4-fpm /etc/init.d/php-fpm
 
 RUN a2dismod mpm_prefork
 RUN a2enconf php7.4-fpm
