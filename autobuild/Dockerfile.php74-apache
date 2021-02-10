@@ -77,6 +77,8 @@ RUN { \
 
 RUN phpenmod -v php7.4 -s ALL opcache-recommended && phpenmod -v php7.4 -s ALL mbstring
 
+RUN ln -s /lib/systemd/system/php7.4-fpm.service /lib/systemd/system/php-fpm.service
+
 RUN a2dismod mpm_prefork
 RUN a2enconf php7.4-fpm
 RUN a2enmod rewrite expires mpm_event proxy proxy_fcgi ssl http2
