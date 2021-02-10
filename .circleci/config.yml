@@ -31,6 +31,7 @@ jobs:
             done
             echo "export IMAGE_TAGS=\"${IMAGE_TAGS[@]}\"" >> $BASH_ENV
 
+
       - run:
           name: Push docker images to Docker Registry
           command: |
