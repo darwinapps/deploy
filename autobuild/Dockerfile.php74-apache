@@ -75,6 +75,14 @@ RUN { \
     echo 'date.timezone = "UTC"'; \
 } > /etc/php/7.4/fpm/php.ini
 
+RUN { \
+    echo '#!/bin/bash'; \
+    echo 'service php-fpm start'; \
+    echo '/usr/sbin/apache2ctl -D FOREGROUND'; \
+} > /usr/local/bin/apache2-phpfpm-start.sh
+RUN chmod 755 /usr/local/bin/apache2-phpfpm-start.sh
+
+
 RUN phpenmod -v php7.4 -s ALL opcache-recommended && phpenmod -v php7.4 -s ALL mbstring
 
 RUN cp /etc/init.d/php7.4-fpm /etc/init.d/php-fpm
