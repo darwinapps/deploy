@@ -1,3 +1,4 @@
+# IMAGE_TAG apache-php:5.6
 FROM ubuntu:18.04
 
 ENV TZ=Europe/Minsk
@@ -20,12 +21,34 @@ RUN apt-get install -y \
     php5.6-mbstring \
     php5.6-imagick \
     php5.6-dev \
-    libapache2-mod-php5.6 \
+    php5.6-xml \
+    php5.6-fpm \
+    libapache2-mod-fcgid \
     apache2 \
     curl \
     git \
     gzip \
-    unzip
+    unzip \
+    zip \
+    less \
+    libwebp-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libfreetype6-dev \
+    libgeoip-dev \
+    libmcrypt-dev \
+    libzip-dev \
+    tcpdump \
+    telnet \
+    net-tools \
+    nano \
+    wget \
+    ssh \
+    imagemagick \
+    libmagickwand-dev \
+    msmtp-mta
+
+RUN apt-get install -y --no-install-recommends mysql-client || apt-get install -y --no-install-recommends default-mysql-client
 
 RUN { \
     echo 'opcache.memory_consumption=128'; \
@@ -50,8 +73,12 @@ RUN { \
     echo 'log_errors_max_len=0'; \
     echo 'error_log=/dev/stderr'; \
     echo 'date.timezone = "UTC"'; \
-} > /etc/php/5.6/apache2/php.ini
+} > /etc/php/5.6/fpm/php.ini
 
 RUN phpenmod -v php5.6 -s ALL opcache-recommended && phpenmod -v php5.6 -s ALL mbstring
 
-RUN a2enmod php5.6 rewrite expires
+RUN cp /etc/init.d/php5.6-fpm /etc/init.d/php-fpm
+
+RUN a2dismod mpm_prefork
+RUN a2enconf php5.6-fpm
+RUN a2enmod rewrite expires mpm_event proxy proxy_fcgi ssl http2
