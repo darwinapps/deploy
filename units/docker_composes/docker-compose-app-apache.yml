@@ -1,0 +1,19 @@
+version: '3.1'
+
+services:
+    webapp:
+        container_name: $APP_CONTAINER
+        image: $APP_IMAGE
+        volumes:
+            - "${DIR_WEB}/:/var/www/html/:delegated"
+            - "${DIR_WORK}/log/apache2/access.log:/var/log/apache2/access.log:delegated"
+            - "${DIR_WORK}/log/apache2/error.log:/var/log/apache2/error.log:delegated"
+            - "${DIR_WORK}/config/:/tmp/config:delegated"
+            - "./ssl/:/etc/apache2/ssl/:delegated"
+        environment:
+            DOCKERIZED: 1
+            APACHE_DOCUMENT_ROOT: $APACHE_DOCUMENT_ROOT
+            APP_ROOT: $APP_ROOT
+            WORDPRESS_TABLE_PREFIX: $WORDPRESS_TABLE_PREFIX
+            LANG: C.UTF-8
+            DEBUG: $DEBUG

@@ -1,0 +1,3 @@
+source $DIR_WORK/config
+
+MYSQL_PORT_MAP=3316:3306

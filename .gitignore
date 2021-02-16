@@ -1,7 +1,3 @@
-/backup/
-/data/
-/log/
-/mysql-init-script/
-/remote-files/
+/workroot/
+/workroot/config
 /webroot/
-/config

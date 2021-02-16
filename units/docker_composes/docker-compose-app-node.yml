@@ -5,8 +5,8 @@ services:
         container_name: $APP_CONTAINER
         image: $APP_IMAGE
         volumes:
-            - "./webroot/:/var/www/html/:delegated"
-            - "./config/:/tmp/config:delegated"
+            - "${DIR_WEB}/:/var/www/html/:delegated"
+            - "${DIR_WORK}/config/:/tmp/config:delegated"
         environment:
             DOCKERIZED: 1
             APP_ROOT: $APP_ROOT

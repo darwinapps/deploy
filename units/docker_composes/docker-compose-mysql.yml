@@ -13,9 +13,9 @@ services:
             MYSQL_DATABASE: $MYSQL_DATABASE
             LANG: C.UTF-8
         volumes:
-            - "./data/db/mysql:/var/lib/mysql:delegated"
-            - "./mysql-init-script:/docker-entrypoint-initdb.d:delegated"
-            - "./log/mysql/:/var/log/mysql/:delegated"
+            - "${DIR_WORK}/data/db/mysql:/var/lib/mysql:delegated"
+            - "${DIR_WORK}/mysql-init-script:/docker-entrypoint-initdb.d:delegated"
+            - "${DIR_WORK}/log/mysql/:/var/log/mysql/:delegated"
     webapp:
         environment:
             MYSQL_PASSWORD: $MYSQL_PASSWORD

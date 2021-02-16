@@ -7,7 +7,6 @@
 
 
 
-
 APP_TYPE="wordpress"
 PROJECT="project"
 REPOSITORY="git@github.com:darwinapps/project.git"

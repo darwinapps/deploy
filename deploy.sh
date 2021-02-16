@@ -2,10 +2,14 @@
 
 exec 3>&1
 
+# Load environment variables from .env file
+if [[ ! -f .env ]]; then echo >&3; echo "No .env file found. Exiting ..." >&3; exit 1; fi
+export $(grep -v '#.*' .env | xargs)
+
 LOGFILE=""
 if [[ $1 == '-v' || $1 == 'dump-database' ]]; then
     if [[ $1 == '-v' ]]; then shift; fi
-else LOGFILE="debug.log"; exec &>$LOGFILE
+else LOGFILE="${DIR_WORK}/debug.log"; exec &>$LOGFILE
 fi
 
 function self_update {
@@ -98,7 +102,7 @@ WORKDIR /
 RUN apt-get update && apt-get install -y \
     python \
     wget
-
+    
 RUN wget https://bootstrap.pypa.io/3.4/get-pip.py && python get-pip.py
 
 RUN pip install --upgrade pip && \
@@ -185,7 +189,7 @@ USER mapped
 }
 
 function get_latest_files_from_ssh {
-    if [[ ! -d webroot/$FILES_DIR ]]; then mkdir -p webroot/$FILES_DIR; fi
+    if [[ ! -d $DIR_WEB/$FILES_DIR ]]; then mkdir -p $DIR_WEB/$FILES_DIR; fi
     progress 10 "Upload files synchronization from generic SSH..."
     
     # username:password@hostname:port
@@ -198,7 +202,7 @@ function get_latest_files_from_ssh {
 
     /usr/bin/expect <<EOD
         set timeout 3600
-        spawn rsync -e "ssh -o StrictHostKeyChecking=no -p $PORT" --delete -av $USERNAME@$HOST:$RSYNC_DIR/ webroot/$FILES_DIR
+        spawn rsync -e "ssh -o StrictHostKeyChecking=no -p $PORT" --delete -av $USERNAME@$HOST:$RSYNC_DIR/ $DIR_WEB/$FILES_DIR
         expect "password:" {
             send "${PASSWORD}\r"
             expect eof
@@ -211,30 +215,30 @@ EOD
 
 function get_latest_files_from_aws {
     FILENAME=${1:-files.tgz}
-    if [[ ! -f remote-files/latest.tgz ]]; then
-        if [[ ! -d remote-files/ ]]; then
-            mkdir remote-files/
+    if [[ ! -f $DIR_WORK/remote-files/latest.tgz ]]; then
+        if [[ ! -d $DIR_WORK/remote-files/ ]]; then
+            mkdir $DIR_WORK/remote-files/
         fi
 
         AWSID=$(get_aws_cli)
         echo_green "Downloading files from AWS..."
-        docker run --rm -it -v "$PWD/remote-files/:/remote-files/" \
+        docker run --rm -it -v "$PWD/$DIR_WORK/remote-files/:/remote-files/" \
             -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
             -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
             -e AWS_DEFAULT_REGION=$AWS_REGION \
             $AWSID \
-                aws s3 cp s3://$BUCKET/$FILENAME /remote-files/latest.tgz
+                aws s3 cp s3://$BUCKET/$FILENAME /$DIR_WORK/remote-files/latest.tgz
     fi
 }
 
 function get_latest_files_from_pantheon {
     FILENAME=${1:-latest.tgz}
-    if [[ ! -f remote-files/latest.tgz ]]; then
-        if [[ ! -d remote-files/ ]]; then
-            mkdir remote-files/
+    if [[ ! -f $DIR_WORK/remote-files/latest.tgz ]]; then
+        if [[ ! -d $DIR_WORK/remote-files/ ]]; then
+            mkdir $DIR_WORK/remote-files/
         fi
         TERMINUSID=$(get_terminus_cli)
-        docker run --rm -it -e HOME=/tmp -v "$PWD/remote-files/:/remote-files/" \
+        docker run --rm -it -e HOME=/tmp -v "$PWD/$DIR_WORK/remote-files/:/remote-files/" \
             $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading files ...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=files --to=/remote-files/latest.tgz"
     fi
 }
@@ -242,7 +246,7 @@ function get_latest_files_from_pantheon {
 function get_latest_db_dump_pantheon {
     FILENAME=${1:-latest.sql.gz}
     TERMINUSID=$(get_terminus_cli)
-    docker run --rm -it -e HOME=/tmp -v "$PWD/mysql-init-script/:/mysql-init-script/" \
+    docker run --rm -it -e HOME=/tmp -v "$PWD/$DIR_WORK/mysql-init-script/:/mysql-init-script/" \
         $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading database ...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=db --to=/mysql-init-script/latest.sql.gz"
 }
 
@@ -259,12 +263,12 @@ function get_latest_db_dump_wpengine {
     /usr/bin/expect <<EOD
         log_user 0
         set timeout 300
-        spawn sftp -o StrictHostKeyChecking=no  -q $DBDUMP_URI mysql-init-script/$FILENAME
+        spawn sftp -o StrictHostKeyChecking=no  -q $DBDUMP_URI $DIR_WORK/mysql-init-script/$FILENAME
         expect "password:" { send "${PASSWORD}\n" }
         expect eof
 EOD
 
-    gzip mysql-init-script/$FILENAME
+    gzip $DIR_WORK/mysql-init-script/$FILENAME
 }
 
 function get_latest_db_dump_generic_ssh {
@@ -298,7 +302,7 @@ EOD
 
     /usr/bin/expect <<EOD
         set timeout 3600
-        spawn rsync -e "ssh -o StrictHostKeyChecking=no -p $PORT" --remove-source-files $USERNAME@$HOST:$FILENAME mysql-init-script/$FILENAME
+        spawn rsync -e "ssh -o StrictHostKeyChecking=no -p $PORT" --remove-source-files $USERNAME@$HOST:$FILENAME $DIR_WORK/mysql-init-script/$FILENAME
         expect "password:" {
             send "${PASSWORD}\r"
             expect eof
@@ -310,18 +314,18 @@ function get_latest_db_dump_aws {
     FILENAME=${1:-latest.sql.gz}
     AWSID=$(get_aws_cli)
     echo_green "Downloading database dump from AWS..."
-    docker run --rm -it -v "$PWD/mysql-init-script/:/mysql-init-script/" \
+    docker run --rm -it -v "$PWD/$DIR_WORK/mysql-init-script/:/mysql-init-script/" \
          -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
          -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
          -e AWS_DEFAULT_REGION=$AWS_REGION \
          $AWSID \
-             aws s3 cp s3://$BUCKET/$FILENAME /mysql-init-script/latest.sql.gz
+             aws s3 cp s3://$BUCKET/$FILENAME /$DIR_WORK/mysql-init-script/latest.sql.gz
 }
 
 function get_latest_db_dump {
-    if [[ ! -f mysql-init-script/latest.sql.gz ]]; then
-        if [[ ! -d mysql-init-script/ ]]; then
-            mkdir mysql-init-script/
+    if [[ ! -f $DIR_WORK/mysql-init-script/latest.sql.gz ]]; then
+        if [[ ! -d $DIR_WORK/mysql-init-script/ ]]; then
+            mkdir $DIR_WORK/mysql-init-script/
         fi
         if [[ $BUCKET ]]; then
             get_latest_db_dump_aws $1
@@ -341,25 +345,25 @@ function upload_dump {
     AWSCLI=$(get_aws_cli)
     echo_green "Uploading $FILENAME to AWS..."
 
-    docker run --rm -it -v "$PWD/backup/:/backup/" \
+    docker run --rm -it -v "$PWD/$DIR_WORK/backup/:/backup/" \
              -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
              -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
              -e AWS_DEFAULT_REGION=$AWS_REGION \
              $AWSCLI \
-                 aws s3 cp /backup/$FILENAME s3://$BUCKET/$FILENAME
+                 aws s3 cp /$DIR_WORK/backup/$FILENAME s3://$BUCKET/$FILENAME
 
-    docker run --rm -it -v "$PWD/backup/:/backup/" \
+    docker run --rm -it -v "$PWD/$DIR_WORK/backup/:/backup/" \
              -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
              -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
              -e AWS_DEFAULT_REGION=$AWS_REGION \
              $AWSCLI \
-                 aws s3 cp /backup/$FILENAME s3://$BUCKET/latest.sql.gz
+                 aws s3 cp /$DIR_WORK/backup/$FILENAME s3://$BUCKET/latest.sql.gz
 }
 
 function gitcmd {
     if [[ $REPOSITORY_KEY != "" ]]; then
         GIT=$(get_git_cli "$REPOSITORY_KEY")
-        docker run -ti --rm -v $PWD:/git -e GIT_SSH_COMMAND='ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" -i /id_rsa' $GIT "$@"
+        docker run -ti --rm -v $PWD/$DIR_WORK:/git -e GIT_SSH_COMMAND='ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" -i /id_rsa' $GIT "$@"
     else
         git "$@"
     fi
@@ -368,10 +372,10 @@ function gitcmd {
 function extract_remote_files {
     DIR=$1
     STRIP=${2:0}
-    if [[ -f remote-files/latest.tgz ]] && [[ $DIR ]]; then
-        [[ ! -d webroot/$DIR ]] && mkdir -p webroot/$DIR
+    if [[ -f $DIR_WORK/remote-files/latest.tgz ]] && [[ $DIR ]]; then
+        [[ ! -d $DIR_WEB/$DIR ]] && mkdir -p $DIR_WEB/$DIR
         echo_green "Unpacking files ..."
-        tar xf remote-files/latest.tgz -C webroot/$DIR $( [[ $STRIP -gt 0 ]] && echo "--strip-components=$STRIP" ) 
+        tar xf $DIR_WORK/remote-files/latest.tgz -C $DIR_WEB/$DIR $( [[ $STRIP -gt 0 ]] && echo "--strip-components=$STRIP" ) 
     fi
 }
 
@@ -381,6 +385,24 @@ function display_usage {
     exit 1;
 }
 
+
+function init_base_image {
+    APP_BASE_IMAGE=${APP_BASE_IMAGE:-php:7.2-apache}
+
+    # username:password@hostname:port
+    IFS=@ read -r USERNAMEPASSWORD REGISTRYIMAGE <<< "${APP_BASE_IMAGE}"
+    IFS=: read -r USERNAME PASSWORD <<< "${USERNAMEPASSWORD}"
+    IFS=/ read -r SOURCE_IMAGE TARGET_IMAGE_TAG <<< "${REGISTRYIMAGE}"
+    IFS=: read -r TARGET_IMAGE TAG <<< "${TARGET_IMAGE_TAG}"
+
+    if [[ $TARGET_IMAGE == "apache-php" ]]; then PHP_VERSION=$TAG; fi
+
+    if [[ ! -z ${USERNAME} ]]; then
+        echo $PASSWORD | docker login --username $USERNAME --password-stdin https://$REGISTRYIMAGE
+        APP_BASE_IMAGE=$REGISTRYIMAGE
+    fi
+
+}
 
 
 
@@ -396,27 +418,30 @@ if [[ $USERID == "0" ]]; then
 fi
 
 
-[[ ! -f ./config ]] && echo_red "No config file found. Exiting ..." && exit 1;
+if [[ ! -f $DIR_WORK/config ]]; then echo >&3; echo_red "No config file found. Exiting ..." >&3; exit 1; fi
 
-source ./config
+source $DIR_WORK/config
+# config.global contains variables that overlap variables from config file
+if [[ -f $DIR_UNITS/config.global ]]; then source $DIR_UNITS/config.global; fi
 
 [[ -z "${WORDPRESS_TABLE_PREFIX}" ]] && WORDPRESS_TABLE_PREFIX=""
-
 [[ -z "${PHP_SHORT_OPEN_TAG}" ]] && PHP_SHORT_OPEN_TAG="Off"
 
 
 
 MYSQL_CONTAINER="$PROJECT-mysql"
 MYSQL_IMAGE=$MYSQL_CONTAINER
-MYSQL_DOCKERFILE=${MYSQL_DOCKERFILE:-Dockerfile.mysql}
+MYSQL_DOCKERFILE=$DIR_DOCKERFILES"/"${MYSQL_DOCKERFILE:-Dockerfile.mysql}
 MYSQL_BASE_IMAGE=${MYSQL_BASE_IMAGE:-mysql:5.6}
 INNODB_LOG_FILE_SIZE=${INNODB_LOG_FILE_SIZE:-"16M"}
 
 APP_CONTAINER="$PROJECT-app"
 APP_IMAGE=$APP_CONTAINER
-APP_DOCKERFILES=("Dockerfile.app.${BASE_APP_TYPE:-apache}")
-APP_BASE_IMAGE=${APP_BASE_IMAGE:-php:7.2-apache}
+APP_DOCKERFILES=($DIR_DOCKERFILES"/Dockerfile.app.${BASE_APP_TYPE:-apache}")
 APP_TYPE=${APP_TYPE:-empty}
+
+init_base_image
+
 
 VERS_COMPOSER=${COMPOSER:-1.10.16}
 SELFUPDATE=${UPDATE:-"on"}
@@ -425,42 +450,44 @@ SELFUPDATE=${UPDATE:-"on"}
 AWS_FILENAME_DB=${AWS_FILENAME_DB:-latest.sql.gz}
 
 
-if [[ -e "Dockerfile.${APP_TYPE}" ]]; then
-    APP_DOCKERFILES+=("Dockerfile.${APP_TYPE}")
+if [[ -e "${DIR_DOCKERFILES}/Dockerfile.${APP_TYPE}" ]]; then
+    APP_DOCKERFILES+=("${DIR_DOCKERFILES}/Dockerfile.${APP_TYPE}")
 fi
 
 APACHE_DOCUMENT_ROOT=/var/www/html/${APP_ROOT%/}
 
-DOCKER_COMPOSE_ARGS=("-f" "docker-compose-app-${BASE_APP_TYPE:-apache}.yml")
+DOCKER_COMPOSE_ARGS=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-${BASE_APP_TYPE:-apache}.yml")
 
 
 if [[ $MYSQL_DATABASE ]]; then
-     DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-mysql.yml")
+     DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-mysql.yml")
 fi
-
 
 if [[ $MYSQL_PORT_MAP ]]; then
      if [[ ! $MYSQL_PORT ]]; then
         IFS=: read -r MYSQL_EXTERNAL_PORT MYSQL_PORT <<< "$MYSQL_PORT_MAP"
      fi
-     DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-mysql-ports.yml")
+     DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-mysql-ports.yml")
 fi
 MYSQL_PORT=${MYSQL_PORT:-3306}
 
 
 
 if [[ $APP_PORT_MAP ]]; then
-     DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-app-ports.yml")
+     DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-ports.yml")
 fi
 
+if [[ $APP_PORT_MAP_SSL ]]; then
+     DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-ssl-ports.yml")
+fi
 
 if [[ $APP_NETWORK ]]; then
-     DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-app-network.yml")
+     DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-network.yml")
 fi
 
 
-if [[ -e "docker-compose.${PROJECT}.yml" ]]; then
-     DOCKER_COMPOSE_ARGS+=("-f" "docker-compose.${PROJECT}.yml")
+if [[ -e "${DIR_DOCKERCOMPOSES}/docker-compose.${PROJECT}.yml" ]]; then
+     DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose.${PROJECT}.yml")
 fi
 
 
@@ -473,8 +500,8 @@ case $1 in
             echo_green "running preinstall function";
             preinstall
 
-            if [[ -e "Dockerfile.${PROJECT}" ]]; then
-                APP_DOCKERFILES+=("Dockerfile.${PROJECT}")
+            if [[ -e "${DIR_WORK}/Dockerfile.${PROJECT}" ]]; then
+                APP_DOCKERFILES+=("${DIR_WORK}/Dockerfile.${PROJECT}")
             fi
         fi
 
@@ -507,12 +534,15 @@ case $1 in
             --build-arg USERID=$USERID \
             --build-arg GROUPID=$GROUPID \
             --build-arg PROJECT=$PROJECT \
+            --build-arg PHP_VERSION=$PHP_VERSION \
             --build-arg APP_TYPE=$APP_TYPE \
             --build-arg APACHE_DOCUMENT_ROOT=$APACHE_DOCUMENT_ROOT \
             --build-arg PHP_SHORT_OPEN_TAG=$PHP_SHORT_OPEN_TAG \
             --build-arg VERS_COMPOSER=$VERS_COMPOSER \
             --build-arg MAILGUN_USER=$MAILGUN_USER \
             --build-arg MAILGUN_PASSWORD=$MAILGUN_PASSWORD \
+            --build-arg DIR_UNITS=$DIR_UNITS \
+            --build-arg DIR_WORK=$DIR_WORK \
             -f - \
             -t $APP_IMAGE . || exit 1
         printf "\n"
@@ -521,9 +551,9 @@ case $1 in
         get_latest_db_dump $AWS_FILENAME_DB
 
         progress 60 "Get latest files from GitHub repository"
-        if [[ $REPOSITORY ]] &&[[ ! -d webroot/.git ]]; then
-            gitcmd clone --recurse-submodules $REPOSITORY webroot/
-            (cd webroot/ && gitcmd submodule update --init --recursive)
+        if [[ $REPOSITORY ]] &&[[ ! -d $DIR_WEB/.git ]]; then
+            gitcmd clone --recurse-submodules $REPOSITORY $DIR_WEB/
+            (cd $DIR_WEB/ && gitcmd submodule update --init --recursive)
         fi
 
         progress 70 "Get latest upload files"
@@ -537,7 +567,7 @@ case $1 in
 
         if [[ $(declare -F postinstall) ]]; then
             echo_green "running postinstall function";
-            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} -f docker-compose-app-user.yml \
+            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} -f docker-compose-app-user.yml \
                 run --no-deps --rm webapp \
                     bash -c "source /tmp/config && HOME=/tmp && postinstall"
 
@@ -550,67 +580,67 @@ case $1 in
         ;;
     down)
         progress 10 "Shutting down"
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} $@
         progress 100 "Done"
         ;;
     up)
         [[ $2 == "-d" ]] || progress 10 "Self update"
         self_update "$@"
-        if [[ ! -d data/db ]]; then
-            mkdir -p data/db/
+        if [[ ! -d $DIR_WORK/data/db ]]; then
+            mkdir -p $DIR_WORK/data/db/
         fi
         [[ $2 == "-d" ]] || progress 20 "Check git tracked"
-        if [[ ! -d webroot/.git ]]; then
+        if [[ ! -d $DIR_WEB/.git ]]; then
             echo_red "Content in your webroot is not tracked by git"
         fi
-        if [[ ! -d log/apache2 ]]; then
-             mkdir -p log/apache2
+        if [[ ! -d $DIR_WORK/log/apache2 ]]; then
+             mkdir -p $DIR_WORK/log/apache2
         fi
         [[ $2 == "-d" ]] || progress 50 "Setting up apache/mysql logs.."
         # error.log might be created as directory if not exists and mounted by docker-compose
-        if [[ ! -f log/apache2/error.log ]]; then
-            rm -rf log/apache2/error.log
-            touch log/apache2/error.log
+        if [[ ! -f $DIR_WORK/log/apache2/error.log ]]; then
+            rm -rf $DIR_WORK/log/apache2/error.log
+            touch $DIR_WORK/log/apache2/error.log
         fi
         # access.log might be created as directory if not exists and mounted by docker-compose
-        if [[ ! -f log/apache2/access.log ]]; then
-            rm -rf log/apache2/access.log
-            touch log/apache2/access.log
+        if [[ ! -f $DIR_WORK/log/apache2/access.log ]]; then
+            rm -rf $DIR_WORK/log/apache2/access.log
+            touch $DIR_WORK/log/apache2/access.log
         fi
 
-        if [[ ! -d log/mysql ]]; then
-             mkdir -p log/mysql
+        if [[ ! -d $DIR_WORK/log/mysql ]]; then
+             mkdir -p $DIR_WORK/log/mysql
         fi
         # error.log might be created as directory if not exists and mounted by docker-compose
-        if [[ ! -f log/mysql/error.log ]]; then
-            rm -rf log/mysql/error.log
-            touch log/mysql/error.log
+        if [[ ! -f $DIR_WORK/log/mysql/error.log ]]; then
+            rm -rf $DIR_WORK/log/mysql/error.log
+            touch $DIR_WORK/log/mysql/error.log
         fi
 
 
         [[ $2 == "-d" ]] || progress 90 "Wait 2-3 min. Exit: ctrl+c"
-        [[ $2 == "-d" ]] || progress 95 "\n"	
+        [[ $2 == "-d" ]] || progress 95 "\n"
 
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} $@
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} $@
         ;;
     status)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} ps
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} ps
         ;;
     run)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} run --no-deps --rm webapp su mapped -c "HOME=/tmp; ${*:2}"
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} run --no-deps --rm webapp su mapped -c "HOME=/tmp; ${*:2}"
         ;;
     su-run)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} run --no-deps --rm webapp "${@:2}"
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} run --no-deps --rm webapp "${@:2}"
         ;;	
     exec)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec webapp ${*:2}
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} exec webapp ${*:2}
         ;;
     git)
-        gitcmd -C webroot/ ${*:2}
+        gitcmd -C $DIR_WEB/ ${*:2}
         ;;
     dump-database)
-        if [[ $(docker ps -f id=$(docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} ps -q mysql) -q) != ""  ]]; then
-            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec -T mysql mysqldump -uroot $MYSQL_DATABASE "${@:2}"
+        if [[ $(docker ps -f id=$(docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} ps -q mysql) -q) != ""  ]]; then
+            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} exec -T mysql mysqldump -uroot $MYSQL_DATABASE "${@:2}"
         else
             echo_red "MYSQL container is not running"
             exit 1
@@ -618,30 +648,30 @@ case $1 in
         ;;
     sync-database)
         AWS_FILENAME_DB=${2:-${AWS_FILENAME_DB:-latest.sql.gz}}
-        rm -rf data/
-        rm -rf mysql-init-script/
+        rm -rf $DIR_WORK/data/
+        rm -rf $DIR_WORK/mysql-init-script/
         get_latest_db_dump $AWS_FILENAME_DB
         ;;
     sync-files)
         if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
-            rm -rf remote-files/
+            rm -rf $DIR_WORK/remote-files/
             get_latest_files_from_pantheon
             extract_remote_files $FILES_DIR 1
         elif [[ $RSYNC_DIR ]] && [[ $FILES_DIR ]] && [[ $GENERIC_SSH ]]; then
             get_latest_files_from_ssh
         elif [[ $FILES_DIR ]]; then
-            rm -rf remote-files/
+            rm -rf $DIR_WORK/remote-files/
             get_latest_files_from_aws
             extract_remote_files $FILES_DIR
         fi
         ;;
     upload)
-        if [[ ! -d backup ]]; then
-            mkdir backup
+        if [[ ! -d $DIR_WORK/backup ]]; then
+            mkdir $DIR_WORK/backup
         fi 
         FILENAME=$MYSQL_CONTAINER-$(date +%Y-%m-%d.%H:%M:%S).sql.gz
-        if [[ $(docker ps -f id=$(docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} ps -q mysql) -q) != ""  ]]; then
-            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec -T mysql mysqldump -uroot $MYSQL_DATABASE | gzip - > backup/$FILENAME
+        if [[ $(docker ps -f id=$(docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@] --project-directory ${PWD}} ps -q mysql) -q) != ""  ]]; then
+            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} exec -T mysql mysqldump -uroot $MYSQL_DATABASE | gzip - > $DIR_WORK/backup/$FILENAME
         else
             echo_red "MYSQL container is not running"
             exit 1
@@ -649,10 +679,10 @@ case $1 in
         upload_dump $BUCKET $FILENAME
         ;;
     clean)
-        cat .gitignore | grep -v 'webroot' | grep -v '/config' | sed -e 's#^/#.//#' | xargs rm -rf
+        cat .gitignore | grep -v $DIR_WEB | grep -v $DIR_WORK'/config' | sed -e 's#^/#.//#' | xargs rm -rf
         ;;
     realclean)
-        cat .gitignore | sed -e 's#^/#./#' | grep -v '/config' | xargs rm -rf
+        cat .gitignore | sed -e 's#^/#./#' | grep -v $DIR_WORK'/config' | xargs rm -rf
         ;;
     *)
         display_usage

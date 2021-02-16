@@ -117,7 +117,7 @@ RUN if [ -n "${MAILGUN_USER}" ] ; then \
 } > /etc/msmtprc; fi
 
 RUN a2enmod rewrite expires
-COPY ./geoip/GeoLiteCity.dat.gz /tmp/
+COPY ${DIR_UNITS}/geoip/GeoLiteCity.dat.gz /tmp/
 RUN mkdir -p /usr/share/GeoIP/ && gunzip -c /tmp/GeoLiteCity.dat.gz > /usr/share/GeoIP/GeoIPCity.dat && rm /tmp/GeoLiteCity.dat.gz
 #&& curl -sL --output - https://github.com/darwinapps/deploy/raw/master/geoip/GeoLiteCity.dat.gz | gunzip - > /usr/share/GeoIP/GeoIPCity.dat
 

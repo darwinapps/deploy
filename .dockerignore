@@ -1,7 +1,9 @@
+/.circleci/
 /.git/
-/backup/
-/data/
-/log/
-/mysql-init-script/
-/remote-files/
+/workroot/.git/
+/workroot/backup/
+/workroot/data/
+/workroot/log/
+/workroot/mysql-init-script/
+/workroot/remote-files/
 /webroot/
