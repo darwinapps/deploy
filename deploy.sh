@@ -542,7 +542,6 @@ case $1 in
             --build-arg MAILGUN_USER=$MAILGUN_USER \
             --build-arg MAILGUN_PASSWORD=$MAILGUN_PASSWORD \
             --build-arg DIR_UNITS=$DIR_UNITS \
-            --build-arg DIR_WORK=$DIR_WORK \
             -f - \
             -t $APP_IMAGE . || exit 1
         printf "\n"
@@ -679,10 +678,10 @@ case $1 in
         upload_dump $BUCKET $FILENAME
         ;;
     clean)
-        cat .gitignore | grep -v $DIR_WEB | grep -v $DIR_WORK'/config' | sed -e 's#^/#.//#' | xargs rm -rf
+        git ls-files -o --directory | grep -v ${DIR_WEB/.\//} | grep -v ${DIR_WORK/.\//}'/config' | xargs rm -rf
         ;;
     realclean)
-        cat .gitignore | sed -e 's#^/#./#' | grep -v $DIR_WORK'/config' | xargs rm -rf
+        git ls-files -o --directory | grep -v ${DIR_WORK/.\//}'/config' | xargs rm -rf
         ;;
     *)
         display_usage
