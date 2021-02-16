@@ -1,3 +1,5 @@
 /workroot/
 /workroot/config
+!/workroot/.gitkeep
 /webroot/
+/ssl/
