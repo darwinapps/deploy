@@ -99,7 +99,7 @@ RUN apt-get update && apt-get install -y \
     python \
     wget
 
-RUN wget https://bootstrap.pypa.io/3.4/get-pip.py && python get-pip.py
+RUN wget https://bootstrap.pypa.io/pip/3.4/get-pip.py && python get-pip.py
 
 RUN pip install --upgrade pip && \
     pip install awscli
