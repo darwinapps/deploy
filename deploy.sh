@@ -2,6 +2,12 @@
 
 exec 3>&1
 
+# Clearing all these variables occurs because when the script is restarted (self_update), these variables contain data from the first run
+MYSQL_DOCKERFILE=""; MYSQL_BASE_IMAGE=""; MYSQL_PORT=""
+INNODB_LOG_FILE_SIZE=""; APP_TYPE=""; AWS_FILENAME_DB=""
+APP_BASE_IMAGE=""
+###
+
 # Load environment variables from .env file
 if [[ ! -f .env ]]; then echo >&3; echo "No .env file found. Exiting ..." >&3; exit 1; fi
 export $(grep -v '#.*' .env | xargs)
@@ -493,12 +499,6 @@ set -a
 
 USERID=$(id -u)
 GROUPID=$(id -g)
-
-# Clearing all these variables occurs because when the script is restarted (self_update), these variables contain data from the first run
-MYSQL_DOCKERFILE=""; MYSQL_BASE_IMAGE=""; MYSQL_PORT=""
-INNODB_LOG_FILE_SIZE=""; APP_TYPE=""; AWS_FILENAME_DB=""
-APP_BASE_IMAGE=""
-###
 
 
 if [[ $USERID == "0" ]]; then
