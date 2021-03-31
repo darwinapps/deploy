@@ -494,6 +494,13 @@ set -a
 USERID=$(id -u)
 GROUPID=$(id -g)
 
+# Clearing all these variables occurs because when the script is restarted (self_update), these variables contain data from the first run
+MYSQL_DOCKERFILE=""; MYSQL_BASE_IMAGE=""; MYSQL_PORT=""
+INNODB_LOG_FILE_SIZE=""; APP_TYPE=""; AWS_FILENAME_DB=""
+APP_BASE_IMAGE=""
+###
+
+
 if [[ $USERID == "0" ]]; then
     echo_red "Running as root is not supported. Please run the following command to add user to the docker group:"
     echo_red "    \$ sudo usermod -aG docker \$USER"
@@ -523,8 +530,6 @@ if [[ ! -d "$DIR_PROJECT" || ! -h "$DIR_PROJECT" ]]; then echo >&3; echo_red "No
 fi
 
 source $DIR_PROJECT/config
-
-
 
 # config.global contains variables that overlap variables from config file
 if [[ -f $DIR_UNITS/config.global ]]; then export $(grep -v '#.*' $DIR_UNITS'/config.global' | xargs); fi
@@ -797,5 +802,3 @@ case $1 in
         ;;
 
 esac
-
-#} >> $LOGFILE 2>&1
