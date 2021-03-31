@@ -6,21 +6,25 @@ exec 3>&1
 if [[ ! -f .env ]]; then echo >&3; echo "No .env file found. Exiting ..." >&3; exit 1; fi
 export $(grep -v '#.*' .env | xargs)
 
+
 LOGFILE=""
 if [[ $1 == '-v' || $1 == 'dump-database' ]]; then
     if [[ $1 == '-v' ]]; then shift; fi
 else LOGFILE="${DIR_WORK}/debug.log"; exec &>$LOGFILE
 fi
 
+
+
 function self_update {
     if [[ $SELFUPDATE == 'off' || $SELFUPDATE == 'OFF' ]]; then echo_red 'Self update off'; return; fi
     # return
     #self-update
+    local CURRENT_BRANCH=$(git symbolic-ref --short HEAD)
     echo_green "Checking for a new version of me..."
     git fetch
-    if [[ -n $(git diff --name-only origin/master) ]]; then
+    if [[ -n $(git diff --name-only origin/$CURRENT_BRANCH) ]]; then
        echo_blue "Found a new version of me, updating..."
-       git reset --hard origin/master
+       git reset --hard origin/$CURRENT_BRANCH
        echo_blue "Restarting..."
        if [ -z "$LOGFILE" ]; then
            exec "$0" "-v" "$@"
@@ -30,6 +34,26 @@ function self_update {
        exit 1
     fi
 }
+
+function projects_update {
+    if [[ ! -d "$DIR_PROJECTS" ]]; then
+        if ! (git clone $REPOSITORY_PROJECTS $DIR_PROJECTS); then
+            echo_red "\nPossible, you not have access to the git repository with configuration files of projects\n"
+            exit 1
+        fi
+    fi
+
+    local WORKDIR=${PWD}
+    cd $DIR_PROJECTS
+
+    git fetch
+    if [[ -n $(git diff --name-only origin/master) ]]; then
+        echo_blue "\nFound a new versions configuration files of projects..."
+        git reset --hard origin/master
+    fi
+    cd $WORKDIR
+}
+
 
 function echo_green { printf "\e[1;32m${1}\n\e[0m"; }
 function echo_blue  { printf "\e[1;34m${1}\n\e[0m"; }
@@ -398,12 +422,71 @@ function init_base_image {
     if [[ $TARGET_IMAGE == "apache-php" ]]; then PHP_VERSION=$TAG; fi
 
     if [[ ! -z ${USERNAME} ]]; then
+        echo_green "Docker login to registry ..."
         echo $PASSWORD | docker login --username $USERNAME --password-stdin https://$REGISTRYIMAGE
         APP_BASE_IMAGE=$REGISTRYIMAGE
     fi
 
 }
 
+function list_projects {
+    projects_update
+
+    if [[ -d "$DIR_PROJECT" && -h "$DIR_PROJECT" ]]; then SELECTED_PROJECT=$(ls -l $DIR_PROJECT | sed 's=.*/=='); fi
+    
+    echo_blue "\nList of projects\n"
+    
+    i=1
+    for DIR in "$DIR_PROJECTS"/*
+    do
+        if [ -e "$DIR" ]; then
+            DIRNAME=$(echo $DIR | sed 's=.*/==')
+            if [[ $DIRNAME != $SELECTED_PROJECT ]]; then echo $i.' '$DIRNAME
+                                                    else echo_green $i.' '$DIRNAME'        <-- selected project'
+            fi
+            (( i++ ))
+        fi
+    done
+    echo
+} >&3
+
+function select_project {
+    i=1
+    for DIR in "$DIR_PROJECTS"/*
+    do
+        if [ -e "$DIR" ]; then
+            DIRNAME=$(echo $DIR | sed 's=.*/==')
+            if [[ $2 == $i || $2 == $DIRNAME ]]; then break; fi;
+            (( i++ ))
+        fi
+    done
+
+    if [[ -f $DIR/config ]]; then
+        PROJECT_NAME=$DIRNAME
+        rm -rf $DIR_PROJECT
+        ln -s ./.$DIR $DIR_PROJECT
+    else echo_red "The selected project does not have a configuration file. Please contact support"; exit 1
+    fi
+
+} >&3
+
+function ssl_certificate_pull {
+    echo_green "SSL certificates downloading ..."
+    mkdir -p $DIR_SSL
+    HTTP_RESPONSE=$(cd $DIR_SSL \
+        && curl -s -u $SSL_CREDENTIALS -w "%{http_code}" \
+        -O $SSL_URL/cert.pem \
+        -O $SSL_URL/chain.pem \
+        -O $SSL_URL/fullchain.pem \
+        -O $SSL_URL/privkey.pem)
+    [[ $HTTP_RESPONSE != "200200200200" ]] && echo_red "SSL certificates download failed"
+}
+
+
+
+##=----                                                                                             ----=##
+#                                         - - =   MAIN CODE   = - -                                       #
+##=----                                                                                             ----=##
 
 
 set -a
@@ -418,11 +501,34 @@ if [[ $USERID == "0" ]]; then
 fi
 
 
-if [[ ! -f $DIR_WORK/config ]]; then echo >&3; echo_red "No config file found. Exiting ..." >&3; exit 1; fi
+if [[ -f ./config ]]; then
+    if [[ ! -d $DIR_PROJECTS/MyConfig ]]; then
+        mkdir -p $DIR_PROJECTS/MyConfig
+        ln -s ./../../config $DIR_PROJECTS/MyConfig/config
+    fi
+    rm -rf $DIR_PROJECT
+    ln -s ./.$DIR_PROJECTS/MyConfig $DIR_PROJECT
+fi
 
-source $DIR_WORK/config
+if [[ ! -f ./config && -d $DIR_PROJECTS/MyConfig ]]; then rm -rf $DIR_PROJECTS/MyConfig; rm -rf $DIR_PROJECT; fi
+
+
+
+if [[ $1 == 'list' ]]; then list_projects; exit 0; fi
+if [[ $1 == 'prepare' && -n $2 ]]; then select_project "$@"; fi
+
+
+if [[ ! -d "$DIR_PROJECT" || ! -h "$DIR_PROJECT" ]]; then echo >&3; echo_red "No config found. Please select a project from the list" >&3; list_projects; exit 1
+    else if [[ ! -f $DIR_PROJECT/config ]] ; then projects_update; fi
+fi
+
+source $DIR_PROJECT/config
+
+
+
 # config.global contains variables that overlap variables from config file
-if [[ -f $DIR_UNITS/config.global ]]; then source $DIR_UNITS/config.global; fi
+if [[ -f $DIR_UNITS/config.global ]]; then export $(grep -v '#.*' $DIR_UNITS'/config.global' | xargs); fi
+
 
 [[ -z "${WORDPRESS_TABLE_PREFIX}" ]] && WORDPRESS_TABLE_PREFIX=""
 [[ -z "${PHP_SHORT_OPEN_TAG}" ]] && PHP_SHORT_OPEN_TAG="Off"
@@ -440,7 +546,6 @@ APP_IMAGE=$APP_CONTAINER
 APP_DOCKERFILES=($DIR_DOCKERFILES"/Dockerfile.app.${BASE_APP_TYPE:-apache}")
 APP_TYPE=${APP_TYPE:-empty}
 
-init_base_image
 
 
 VERS_COMPOSER=${COMPOSER:-1.10.16}
@@ -495,7 +600,10 @@ case $1 in
     prepare)
         progress 5 Initialize
         self_update "$@"
-
+        
+        init_base_image
+        ssl_certificate_pull
+        
         if [[ $(declare -F preinstall) ]]; then
             echo_green "running preinstall function";
             preinstall
@@ -585,6 +693,7 @@ case $1 in
     up)
         [[ $2 == "-d" ]] || progress 10 "Self update"
         self_update "$@"
+
         if [[ ! -d $DIR_WORK/data/db ]]; then
             mkdir -p $DIR_WORK/data/db/
         fi
