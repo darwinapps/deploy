@@ -1,7 +1,7 @@
 /workroot/*
 !/workroot/.gitkeep
-/workroot/config
-/units/config_global
+/units/config.global
 /units/ssl/
 /webroot/
 /projects/
+/config
