@@ -465,6 +465,10 @@ function list_projects {
     echo
 } >&3
 
+function realclean {
+    git ls-files -o --directory | grep -v ${DIR_WORK/.\//}'/config' | xargs rm -rf
+}
+
 function select_project {
     i=1
     for DIR in "$DIR_PROJECTS"/*
@@ -476,8 +480,18 @@ function select_project {
         fi
     done
 
+    if [[ -d "$DIR_PROJECT" && -h "$DIR_PROJECT" ]]; then
+        SELECTED_PROJECT=$(ls -l $DIR_PROJECT | sed 's=.*/==')
+        if [ ! $SELECTED_PROJECT == $DIRNAME ]; then
+            echo_red "\n!!! WARNING !!!\nAll data from the previous project "$SELECTED_PROJECT" will be deleted!\n"
+            echo_red "To abort the process, press CTRL-C...\n"
+            for ((i=15;i>0;i--)) do echo_red $i" seconds left..."; sleep 1; done
+            realclean
+            projects_update
+        fi
+    fi
+
     if [[ -f $DIR/config ]]; then
-        PROJECT_NAME=$DIRNAME
         rm -rf $DIR_PROJECT
         ln -s ./.$DIR $DIR_PROJECT
     else echo_red "The selected project does not have a configuration file. Please contact support"; exit 1
@@ -807,7 +821,7 @@ case $1 in
         git ls-files -o --directory | grep -v ${DIR_WEB/.\//} | grep -v ${DIR_WORK/.\//}'/config' | xargs rm -rf
         ;;
     realclean)
-        git ls-files -o --directory | grep -v ${DIR_WORK/.\//}'/config' | xargs rm -rf
+        realclean
         ;;
     *)
         display_usage
