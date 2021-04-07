@@ -11,14 +11,16 @@ APP_BASE_IMAGE=""
 
 # Load environment variables from .env file
 if [[ ! -f .env ]]; then echo >&3; echo "No .env file found. Exiting..." >&3; exit 1; fi
-for variable in $(grep -v '#.*' .env); do eval $variable; done
+for variable_str in $(grep -v '#.*' .env); do
+    eval $variable_str
+    export $(echo $variable_str | sed 's/=.*//')
+done
 
 LOGFILE=""
 if [[ $1 == '-v' || $1 == 'dump-database' ]]; then
     if [[ $1 == '-v' ]]; then shift; fi
 else LOGFILE="${DIR_WORK}/debug.log"; exec &>$LOGFILE
 fi
-
 
 
 function self_update {

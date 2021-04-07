@@ -9,7 +9,7 @@ services:
             - "${DIR_WORK}/log/apache2/access.log:/var/log/apache2/access.log:delegated"
             - "${DIR_WORK}/log/apache2/error.log:/var/log/apache2/error.log:delegated"
             - "${DIR_WORK}/config/:/tmp/config:delegated"
-            - "${DIR_UNITS}/ssl/:/etc/apache2/ssl/:delegated"
+            - "${DIR_SSL}/:/etc/apache2/ssl/:delegated"
         environment:
             DOCKERIZED: 1
             APACHE_DOCUMENT_ROOT: $APACHE_DOCUMENT_ROOT
