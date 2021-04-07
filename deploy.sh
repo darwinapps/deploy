@@ -470,6 +470,8 @@ function realclean {
 }
 
 function select_project {
+    projects_update
+    
     i=1
     for DIR in "$DIR_PROJECTS"/*
     do
