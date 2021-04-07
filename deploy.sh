@@ -8,10 +8,10 @@ INNODB_LOG_FILE_SIZE=""; APP_TYPE=""; AWS_FILENAME_DB=""
 APP_BASE_IMAGE=""
 ###
 
-# Load environment variables from .env file
-if [[ ! -f .env ]]; then echo >&3; echo "No .env file found. Exiting ..." >&3; exit 1; fi
-export $(grep -v '#.*' .env | xargs)
 
+# Load environment variables from .env file
+if [[ ! -f .env ]]; then echo >&3; echo "No .env file found. Exiting..." >&3; exit 1; fi
+for variable in $(grep -v '#.*' .env); do eval $variable; done
 
 LOGFILE=""
 if [[ $1 == '-v' || $1 == 'dump-database' ]]; then
@@ -269,7 +269,7 @@ function get_latest_files_from_pantheon {
         fi
         TERMINUSID=$(get_terminus_cli)
         docker run --rm -it -e HOME=/tmp -v "$PWD/$DIR_WORK/remote-files/:/remote-files/" \
-            $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading files ...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=files --to=/remote-files/latest.tgz"
+            $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading files...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=files --to=/remote-files/latest.tgz"
     fi
 }
 
@@ -277,7 +277,7 @@ function get_latest_db_dump_pantheon {
     FILENAME=${1:-latest.sql.gz}
     TERMINUSID=$(get_terminus_cli)
     docker run --rm -it -e HOME=/tmp -v "$PWD/$DIR_WORK/mysql-init-script/:/mysql-init-script/" \
-        $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading database ...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=db --to=/mysql-init-script/latest.sql.gz"
+        $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading database...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=db --to=/mysql-init-script/latest.sql.gz"
 }
 
 function get_latest_db_dump_wpengine {
@@ -404,14 +404,21 @@ function extract_remote_files {
     STRIP=${2:0}
     if [[ -f $DIR_WORK/remote-files/latest.tgz ]] && [[ $DIR ]]; then
         [[ ! -d $DIR_WEB/$DIR ]] && mkdir -p $DIR_WEB/$DIR
-        echo_green "Unpacking files ..."
+        echo_green "Unpacking files..."
         tar xf $DIR_WORK/remote-files/latest.tgz -C $DIR_WEB/$DIR $( [[ $STRIP -gt 0 ]] && echo "--strip-components=$STRIP" ) 
     fi
 }
 
 function display_usage {
+    echo
     echo "Usage:"
-    echo "    $0 ( prepare | down | up | status | run | su-run | exec | git | dump-database | sync-database | sync-files | upload | clean | realclean )"
+    echo "    $0 ( list | prepare | down | up | status | run | su-run | exec | git | dump-database | sync-database | sync-files | upload | clean | realclean )"
+    echo
+    echo "Global variables can be set in a file "$DIR_UNITS"/config.global"
+    echo "Sample file content:"
+    echo "    MYSQL_PORT_MAP=3316:3306"
+    echo
+    echo
     exit 1;
 }
 
@@ -428,7 +435,7 @@ function init_base_image {
     if [[ $TARGET_IMAGE == "apache-php" ]]; then PHP_VERSION=$TAG; fi
 
     if [[ ! -z ${USERNAME} ]]; then
-        echo_green "Docker login to registry ..."
+        echo_green "Docker login to registry..."
         echo $PASSWORD | docker login --username $USERNAME --password-stdin https://$REGISTRYIMAGE
         APP_BASE_IMAGE=$REGISTRYIMAGE
     fi
@@ -477,7 +484,7 @@ function select_project {
 } >&3
 
 function ssl_certificate_pull {
-    echo_green "SSL certificates downloading ..."
+    echo_green "SSL certificates downloading..."
     mkdir -p $DIR_SSL
     HTTP_RESPONSE=$(cd $DIR_SSL \
         && curl -s -u $SSL_CREDENTIALS -w "%{http_code}" \
@@ -526,8 +533,11 @@ if [[ $1 == 'prepare' && -n $2 ]]; then select_project "$@"; fi
 
 
 if [[ ! -d "$DIR_PROJECT" || ! -h "$DIR_PROJECT" ]]; then echo >&3; echo_red "No config found. Please select a project from the list" >&3; list_projects; exit 1
-    else if [[ ! -f $DIR_PROJECT/config ]] ; then projects_update; fi
+    else
+        SELECTED_PROJECT=$(ls -l $DIR_PROJECT | sed 's=.*/==')
+        if [[ ! -f $DIR_PROJECT/config ]] ; then projects_update; fi
 fi
+
 
 source $DIR_PROJECT/config
 
@@ -603,7 +613,7 @@ fi
 
 case $1 in
     prepare)
-        progress 5 Initialize
+        progress 5 "Initialize $SELECTED_PROJECT"
         self_update "$@"
         
         init_base_image
