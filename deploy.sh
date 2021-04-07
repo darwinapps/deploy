@@ -466,7 +466,7 @@ function list_projects {
 } >&3
 
 function realclean {
-    git ls-files -o --directory | grep -v './config' | xargs rm -rf
+    git ls-files -o --directory | grep -v '^config$' | grep -v 'config.global$' | xargs rm -rf
 }
 
 function select_project {
