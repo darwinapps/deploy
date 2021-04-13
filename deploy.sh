@@ -144,7 +144,7 @@ RUN apt-get update && apt-get install -y \
     python \
     wget
     
-RUN wget https://bootstrap.pypa.io/3.4/get-pip.py && python get-pip.py
+RUN wget https://bootstrap.pypa.io/pip/3.4/get-pip.py && python get-pip.py
 
 RUN pip install --upgrade pip && \
     pip install awscli
@@ -727,7 +727,7 @@ case $1 in
 
         if [[ $(declare -F postinstall) ]]; then
             echo_green "running postinstall function";
-            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} -f docker-compose-app-user.yml \
+            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} -f ${DIR_DOCKERCOMPOSES}/docker-compose-app-user.yml \
                 run --no-deps --rm webapp \
                     bash -c "source /tmp/config && HOME=/tmp && postinstall"
 
