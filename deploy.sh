@@ -60,6 +60,15 @@ function projects_update {
         git reset --hard origin/master
     fi
     cd $WORKDIR
+
+    # Search for the config in the root of the program and add it to the list of configs
+    if [[ -f ./config ]]; then
+        if [[ ! -d $DIR_PROJECTS/MyConfig ]]; then
+            mkdir -p $DIR_PROJECTS/MyConfig
+            ln -s ./../../config $DIR_PROJECTS/MyConfig/config
+        fi
+    fi
+    ###
 }
 
 
@@ -422,7 +431,7 @@ function display_usage {
     echo
     echo
     exit 1;
-}
+} >&3
 
 
 function init_base_image {
@@ -482,16 +491,19 @@ function select_project {
         fi
     done
 
+    # If the project's config was changed
     if [[ -d "$DIR_PROJECT" && -h "$DIR_PROJECT" ]]; then
         SELECTED_PROJECT=$(ls -l $DIR_PROJECT | sed 's=.*/==')
         if [ ! $SELECTED_PROJECT == $DIRNAME ]; then
             echo_red "\n!!! WARNING !!!\nAll data from the previous project "$SELECTED_PROJECT" will be deleted!\n"
             echo_red "To abort the process, press CTRL-C...\n"
             for ((i=15;i>0;i--)) do echo_red $i" seconds left..."; sleep 1; done
+            if [ ! $DIRNAME == "MyConfig" ]; then rm -f ./config; fi
             realclean
             projects_update
         fi
     fi
+    ###
 
     if [[ -f $DIR/config ]]; then
         rm -rf $DIR_PROJECT
@@ -513,6 +525,87 @@ function ssl_certificate_pull {
     [[ $HTTP_RESPONSE != "200200200200" ]] && echo_red "SSL certificates download failed"
 }
 
+function environment_setup {
+    if [[ ! -d "$DIR_PROJECT" || ! -h "$DIR_PROJECT" ]]; then echo >&3; echo_red "No config found. Please select a project from the list" >&3; list_projects; exit 1
+        else
+            SELECTED_PROJECT=$(ls -l $DIR_PROJECT | sed 's=.*/==')
+            if [[ ! -f $DIR_PROJECT/config ]] ; then projects_update; fi
+    fi
+
+
+    source $DIR_PROJECT/config
+
+    # config.global contains variables that overlap variables from config file
+    if [[ -f $DIR_UNITS/config.global ]]; then export $(grep -v '#.*' $DIR_UNITS'/config.global' | xargs); fi
+
+
+    [[ -z "${WORDPRESS_TABLE_PREFIX}" ]] && WORDPRESS_TABLE_PREFIX=""
+    [[ -z "${PHP_SHORT_OPEN_TAG}" ]] && PHP_SHORT_OPEN_TAG="Off"
+
+
+
+    MYSQL_CONTAINER="$PROJECT-mysql"
+    MYSQL_IMAGE=$MYSQL_CONTAINER
+    MYSQL_DOCKERFILE=$DIR_DOCKERFILES"/"${MYSQL_DOCKERFILE:-Dockerfile.mysql}
+    MYSQL_BASE_IMAGE=${MYSQL_BASE_IMAGE:-mysql:5.6}
+    INNODB_LOG_FILE_SIZE=${INNODB_LOG_FILE_SIZE:-"16M"}
+
+    APP_CONTAINER="$PROJECT-app"
+    APP_IMAGE=$APP_CONTAINER
+    APP_DOCKERFILES=($DIR_DOCKERFILES"/Dockerfile.app.${BASE_APP_TYPE:-apache}")
+    APP_TYPE=${APP_TYPE:-empty}
+
+
+
+    VERS_COMPOSER=${COMPOSER:-1.10.16}
+    SELFUPDATE=${UPDATE:-"on"}
+
+
+    AWS_FILENAME_DB=${AWS_FILENAME_DB:-latest.sql.gz}
+
+
+    if [[ -e "${DIR_DOCKERFILES}/Dockerfile.${APP_TYPE}" ]]; then
+        APP_DOCKERFILES+=("${DIR_DOCKERFILES}/Dockerfile.${APP_TYPE}")
+    fi
+
+    APACHE_DOCUMENT_ROOT=/var/www/html/${APP_ROOT%/}
+
+    DOCKER_COMPOSE_ARGS=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-${BASE_APP_TYPE:-apache}.yml")
+
+
+    if [[ $MYSQL_DATABASE ]]; then
+        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-mysql.yml")
+    fi
+
+    if [[ $MYSQL_PORT_MAP ]]; then
+        if [[ ! $MYSQL_PORT ]]; then
+            IFS=: read -r MYSQL_EXTERNAL_PORT MYSQL_PORT <<< "$MYSQL_PORT_MAP"
+        fi
+        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-mysql-ports.yml")
+    fi
+    MYSQL_PORT=${MYSQL_PORT:-3306}
+
+
+
+    if [[ $APP_PORT_MAP ]]; then
+        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-ports.yml")
+    fi
+
+    if [[ $APP_PORT_MAP_SSL ]]; then
+        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-ssl-ports.yml")
+    fi
+
+    if [[ $APP_NETWORK ]]; then
+        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-network.yml")
+    fi
+
+
+    if [[ -e "${DIR_DOCKERCOMPOSES}/docker-compose.${PROJECT}.yml" ]]; then
+        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose.${PROJECT}.yml")
+    fi
+}
+
+
 
 
 ##=----                                                                                             ----=##
@@ -532,101 +625,28 @@ if [[ $USERID == "0" ]]; then
     exit 1;
 fi
 
-
-if [[ -f ./config ]]; then
-    if [[ ! -d $DIR_PROJECTS/MyConfig ]]; then
-        mkdir -p $DIR_PROJECTS/MyConfig
-        ln -s ./../../config $DIR_PROJECTS/MyConfig/config
-    fi
-    rm -rf $DIR_PROJECT
-    ln -s ./.$DIR_PROJECTS/MyConfig $DIR_PROJECT
-fi
-
 if [[ ! -f ./config && -d $DIR_PROJECTS/MyConfig ]]; then rm -rf $DIR_PROJECTS/MyConfig; rm -rf $DIR_PROJECT; fi
 
+case $1 in
+    up | down | status | run | su-run | exec | dump-database | sync-database | dump-database | sync-files | upload)
+        environment_setup
+        ;;
 
+    prepare)
+        if [[ -n $2 ]]; then select_project "$@"
+        else
+            if [[ -f ./config ]]; then select_project $1 "MyConfig"; fi
+        fi
 
-if [[ $1 == 'list' ]]; then list_projects; exit 0; fi
-if [[ $1 == 'prepare' && -n $2 ]]; then select_project "$@"; fi
+        environment_setup
+        ;;
 
+    list)
+        list_projects
+        exit 0
+        ;;
+esac
 
-if [[ ! -d "$DIR_PROJECT" || ! -h "$DIR_PROJECT" ]]; then echo >&3; echo_red "No config found. Please select a project from the list" >&3; list_projects; exit 1
-    else
-        SELECTED_PROJECT=$(ls -l $DIR_PROJECT | sed 's=.*/==')
-        if [[ ! -f $DIR_PROJECT/config ]] ; then projects_update; fi
-fi
-
-
-source $DIR_PROJECT/config
-
-# config.global contains variables that overlap variables from config file
-if [[ -f $DIR_UNITS/config.global ]]; then export $(grep -v '#.*' $DIR_UNITS'/config.global' | xargs); fi
-
-
-[[ -z "${WORDPRESS_TABLE_PREFIX}" ]] && WORDPRESS_TABLE_PREFIX=""
-[[ -z "${PHP_SHORT_OPEN_TAG}" ]] && PHP_SHORT_OPEN_TAG="Off"
-
-
-
-MYSQL_CONTAINER="$PROJECT-mysql"
-MYSQL_IMAGE=$MYSQL_CONTAINER
-MYSQL_DOCKERFILE=$DIR_DOCKERFILES"/"${MYSQL_DOCKERFILE:-Dockerfile.mysql}
-MYSQL_BASE_IMAGE=${MYSQL_BASE_IMAGE:-mysql:5.6}
-INNODB_LOG_FILE_SIZE=${INNODB_LOG_FILE_SIZE:-"16M"}
-
-APP_CONTAINER="$PROJECT-app"
-APP_IMAGE=$APP_CONTAINER
-APP_DOCKERFILES=($DIR_DOCKERFILES"/Dockerfile.app.${BASE_APP_TYPE:-apache}")
-APP_TYPE=${APP_TYPE:-empty}
-
-
-
-VERS_COMPOSER=${COMPOSER:-1.10.16}
-SELFUPDATE=${UPDATE:-"on"}
-
-
-AWS_FILENAME_DB=${AWS_FILENAME_DB:-latest.sql.gz}
-
-
-if [[ -e "${DIR_DOCKERFILES}/Dockerfile.${APP_TYPE}" ]]; then
-    APP_DOCKERFILES+=("${DIR_DOCKERFILES}/Dockerfile.${APP_TYPE}")
-fi
-
-APACHE_DOCUMENT_ROOT=/var/www/html/${APP_ROOT%/}
-
-DOCKER_COMPOSE_ARGS=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-${BASE_APP_TYPE:-apache}.yml")
-
-
-if [[ $MYSQL_DATABASE ]]; then
-     DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-mysql.yml")
-fi
-
-if [[ $MYSQL_PORT_MAP ]]; then
-     if [[ ! $MYSQL_PORT ]]; then
-        IFS=: read -r MYSQL_EXTERNAL_PORT MYSQL_PORT <<< "$MYSQL_PORT_MAP"
-     fi
-     DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-mysql-ports.yml")
-fi
-MYSQL_PORT=${MYSQL_PORT:-3306}
-
-
-
-if [[ $APP_PORT_MAP ]]; then
-     DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-ports.yml")
-fi
-
-if [[ $APP_PORT_MAP_SSL ]]; then
-     DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-ssl-ports.yml")
-fi
-
-if [[ $APP_NETWORK ]]; then
-     DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-network.yml")
-fi
-
-
-if [[ -e "${DIR_DOCKERCOMPOSES}/docker-compose.${PROJECT}.yml" ]]; then
-     DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose.${PROJECT}.yml")
-fi
 
 
 case $1 in
@@ -776,9 +796,7 @@ case $1 in
     exec)
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} exec webapp ${*:2}
         ;;
-    git)
-        gitcmd -C $DIR_WEB/ ${*:2}
-        ;;
+
     dump-database)
         if [[ $(docker ps -f id=$(docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} ps -q mysql) -q) != ""  ]]; then
             docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} exec -T mysql mysqldump -uroot $MYSQL_DATABASE "${@:2}"
@@ -819,12 +837,19 @@ case $1 in
         fi
         upload_dump $BUCKET $FILENAME
         ;;
+
+    git)
+        gitcmd -C $DIR_WEB/ ${*:2}
+        ;;
+
     clean)
         git ls-files -o --directory | grep -v ${DIR_WEB/.\//} | grep -v ${DIR_WORK/.\//}'/config' | xargs rm -rf
         ;;
+
     realclean)
         realclean
         ;;
+
     *)
         display_usage
         ;;
