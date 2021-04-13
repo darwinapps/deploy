@@ -268,7 +268,7 @@ function get_latest_files_from_aws {
             -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
             -e AWS_DEFAULT_REGION=$AWS_REGION \
             $AWSID \
-                aws s3 cp s3://$BUCKET/$FILENAME /$DIR_WORK/remote-files/latest.tgz
+                aws s3 cp s3://$BUCKET/$FILENAME /remote-files/latest.tgz
     fi
 }
 
@@ -360,7 +360,7 @@ function get_latest_db_dump_aws {
          -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
          -e AWS_DEFAULT_REGION=$AWS_REGION \
          $AWSID \
-             aws s3 cp s3://$BUCKET/$FILENAME /$DIR_WORK/mysql-init-script/latest.sql.gz
+             aws s3 cp s3://$BUCKET/$FILENAME /mysql-init-script/latest.sql.gz
 }
 
 function get_latest_db_dump {
@@ -391,14 +391,14 @@ function upload_dump {
              -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
              -e AWS_DEFAULT_REGION=$AWS_REGION \
              $AWSCLI \
-                 aws s3 cp /$DIR_WORK/backup/$FILENAME s3://$BUCKET/$FILENAME
+                 aws s3 cp /backup/$FILENAME s3://$BUCKET/$FILENAME
 
     docker run --rm -it -v "$PWD/$DIR_WORK/backup/:/backup/" \
              -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
              -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
              -e AWS_DEFAULT_REGION=$AWS_REGION \
              $AWSCLI \
-                 aws s3 cp /$DIR_WORK/backup/$FILENAME s3://$BUCKET/latest.sql.gz
+                 aws s3 cp /backup/$FILENAME s3://$BUCKET/latest.sql.gz
 }
 
 function gitcmd {
