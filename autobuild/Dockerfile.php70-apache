@@ -56,6 +56,11 @@ RUN { \
     echo '    ServerName project'; \
     echo '    ServerAdmin webmaster@localhost'; \
     echo '    DocumentRoot /var/www/html'; \
+    echo '<Directory /var/www/html>'; \
+    echo '    Options -Indexes +FollowSymLinks +MultiViews'; \
+    echo '    AllowOverride All'; \
+    echo '    Require all granted'; \
+    echo '</Directory>'; \
     echo '    ErrorLog ${APACHE_LOG_DIR}/error.log'; \
     echo '    CustomLog ${APACHE_LOG_DIR}/access.log combined'; \
     echo '    Protocols h2 h2c http/1.1'; \
@@ -68,6 +73,11 @@ RUN { \
     echo '    ServerName project'; \
     echo '    ServerAdmin webmaster@localhost'; \
     echo '    DocumentRoot /var/www/html'; \
+    echo '<Directory /var/www/html>'; \
+    echo '    Options -Indexes +FollowSymLinks +MultiViews'; \
+    echo '    AllowOverride All'; \
+    echo '    Require all granted'; \
+    echo '</Directory>'; \
     echo '    ErrorLog ${APACHE_LOG_DIR}/error.log'; \
     echo '    CustomLog ${APACHE_LOG_DIR}/access.log combined'; \
     echo '</VirtualHost>'; \
