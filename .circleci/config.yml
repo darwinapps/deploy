@@ -13,7 +13,6 @@ jobs:
     steps:
       - checkout
       - aws-cli/install
-      - aws-cli/setup
 
       - run:
           name: Setup Environment Variables
