@@ -1,4 +1,8 @@
 version: 2.1
+
+orbs:
+  aws-cli: circleci/aws-cli@2.0.0
+
 jobs:
   build:
     machine:
@@ -8,11 +12,17 @@ jobs:
 
     steps:
       - checkout
+      - aws-cli/install
+
+      - run:
+          name: Setup Environment Variables
+          command: |
+            echo "export REGISTRY_HOST=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com" >> $BASH_ENV
 
       - run:
           name: Authorization in Docker Registry
           command: |
-            echo "$REGISTRY_PASS" | docker login --username $REGISTRY_USER --password-stdin https://$REGISTRY_HOST
+            aws ecr get-login-password | docker login --username AWS --password-stdin $REGISTRY_HOST
 
       - run:
           name: Build docker images
@@ -86,3 +96,4 @@ workflows:
             branches:
               only:
                 - master
+                - develop
