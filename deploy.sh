@@ -618,7 +618,30 @@ function environment_setup {
     fi
 }
 
+function InitFolderAndFiles {
+    if [[ ! -d $DIR_WEB/.git ]]; then echo_red "Content in your webroot is not tracked by git"; fi
+    if [[ ! -d $DIR_WORK/data/db ]]; then mkdir -p $DIR_WORK/data/db/; fi
+    if [[ ! -d $DIR_WORK/log/mysql ]]; then mkdir -p $DIR_WORK/log/mysql; fi
+    if [[ ! -d $DIR_WORK/log/apache2 ]]; then mkdir -p $DIR_WORK/log/apache2; fi
 
+    # error.log might be created as directory if not exists and mounted by docker-compose
+    if [[ ! -f $DIR_WORK/log/apache2/error.log ]]; then
+        rm -rf $DIR_WORK/log/apache2/error.log
+        touch $DIR_WORK/log/apache2/error.log
+    fi
+
+    # access.log might be created as directory if not exists and mounted by docker-compose
+    if [[ ! -f $DIR_WORK/log/apache2/access.log ]]; then
+        rm -rf $DIR_WORK/log/apache2/access.log
+        touch $DIR_WORK/log/apache2/access.log
+    fi
+
+    # error.log might be created as directory if not exists and mounted by docker-compose
+    if [[ ! -f $DIR_WORK/log/mysql/error.log ]]; then
+        rm -rf $DIR_WORK/log/mysql/error.log
+        touch $DIR_WORK/log/mysql/error.log
+    fi
+}
 
 
 ##=----                                                                                             ----=##
@@ -666,7 +689,8 @@ case $1 in
     prepare)
         progress 5 "Initialize $SELECTED_PROJECT"
         self_update "$@"
-        
+
+        InitFolderAndFiles
         init_base_image
         ssl_certificate_pull
         
@@ -742,7 +766,7 @@ case $1 in
             echo_green "running postinstall function";
             docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} -f ${DIR_DOCKERCOMPOSES}/docker-compose-app-user.yml \
                 run --no-deps --rm webapp \
-                    bash -c "source /tmp/config && HOME=/tmp && postinstall"
+                    bash -c "source /tmp/config && HOME=/tmp && cd /var/www/html && postinstall"
 
         fi
         
@@ -757,40 +781,11 @@ case $1 in
         progress 100 "Done"
         ;;
     up)
-        [[ $2 == "-d" ]] || progress 10 "Self update"
+        [[ $2 == "-d" ]] || progress 20 "Self update"
         self_update "$@"
 
-        if [[ ! -d $DIR_WORK/data/db ]]; then
-            mkdir -p $DIR_WORK/data/db/
-        fi
-        [[ $2 == "-d" ]] || progress 20 "Check git tracked"
-        if [[ ! -d $DIR_WEB/.git ]]; then
-            echo_red "Content in your webroot is not tracked by git"
-        fi
-        if [[ ! -d $DIR_WORK/log/apache2 ]]; then
-             mkdir -p $DIR_WORK/log/apache2
-        fi
-        [[ $2 == "-d" ]] || progress 50 "Setting up apache/mysql logs.."
-        # error.log might be created as directory if not exists and mounted by docker-compose
-        if [[ ! -f $DIR_WORK/log/apache2/error.log ]]; then
-            rm -rf $DIR_WORK/log/apache2/error.log
-            touch $DIR_WORK/log/apache2/error.log
-        fi
-        # access.log might be created as directory if not exists and mounted by docker-compose
-        if [[ ! -f $DIR_WORK/log/apache2/access.log ]]; then
-            rm -rf $DIR_WORK/log/apache2/access.log
-            touch $DIR_WORK/log/apache2/access.log
-        fi
-
-        if [[ ! -d $DIR_WORK/log/mysql ]]; then
-             mkdir -p $DIR_WORK/log/mysql
-        fi
-        # error.log might be created as directory if not exists and mounted by docker-compose
-        if [[ ! -f $DIR_WORK/log/mysql/error.log ]]; then
-            rm -rf $DIR_WORK/log/mysql/error.log
-            touch $DIR_WORK/log/mysql/error.log
-        fi
-
+        [[ $2 == "-d" ]] || progress 40 "Setting up apache/mysql logs.."
+        InitFolderAndFiles
 
         [[ $2 == "-d" ]] || progress 90 "Wait 2-3 min. Exit: ctrl+c"
         [[ $2 == "-d" ]] || progress 95 "\n"
