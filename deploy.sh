@@ -443,14 +443,27 @@ function init_base_image {
     IFS=/ read -r SOURCE_IMAGE TARGET_IMAGE_TAG <<< "${REGISTRYIMAGE}"
     IFS=: read -r TARGET_IMAGE TAG <<< "${TARGET_IMAGE_TAG}"
 
+    AWS_REGION_IMAGE=$(sed 's/.*\.\(.*\)\..*/\1/' <<< `expr "$SOURCE_IMAGE" : '.*\(\..*\.amazonaws\)'`)
+
     if [[ $TARGET_IMAGE == "apache-php" ]]; then PHP_VERSION=$TAG; fi
 
     if [[ ! -z ${USERNAME} ]]; then
         echo_green "Docker login to registry..."
-        echo $PASSWORD | docker login --username $USERNAME --password-stdin https://$REGISTRYIMAGE
+
+        if [[ -z ${AWS_REGION_IMAGE} ]]; then
+            echo $PASSWORD | docker login --username $USERNAME --password-stdin https://$REGISTRYIMAGE
+        else
+            AWSID=$(get_aws_cli)
+            docker run --rm -it \
+                -e AWS_ACCESS_KEY_ID=$USERNAME \
+                -e AWS_SECRET_ACCESS_KEY=$PASSWORD \
+                -e AWS_DEFAULT_REGION=$AWS_REGION_IMAGE \
+                $AWSID \
+                    aws ecr get-login-password | docker login --username AWS --password-stdin $SOURCE_IMAGE
+        fi
+
         APP_BASE_IMAGE=$REGISTRYIMAGE
     fi
-
 }
 
 function list_projects {
