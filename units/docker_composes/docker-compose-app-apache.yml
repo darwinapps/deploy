@@ -8,7 +8,7 @@ services:
             - "${DIR_WEB}/:/var/www/html/:delegated"
             - "${DIR_WORK}/log/apache2/access.log:/var/log/apache2/access.log:delegated"
             - "${DIR_WORK}/log/apache2/error.log:/var/log/apache2/error.log:delegated"
-            - "${DIR_WORK}/config/:/tmp/config:delegated"
+            - "${DIR_PROJECT}/config:/tmp/config:delegated"
             - "${DIR_SSL}/:/etc/apache2/ssl/:delegated"
         environment:
             DOCKERIZED: 1
