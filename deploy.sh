@@ -793,10 +793,10 @@ case $1 in
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} $@
         ;;
     status)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} ps
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} ps >&3
         ;;
     run)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} run --no-deps --rm webapp su mapped -c "HOME=/tmp; ${*:2}"
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} run --no-deps --rm webapp su mapped -c "cd /var/www/html; HOME=/tmp; ${*:2}"
         ;;
     su-run)
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} run --no-deps --rm webapp "${@:2}"
@@ -847,7 +847,7 @@ case $1 in
         ;;
 
     git)
-        gitcmd -C $DIR_WEB/ ${*:2}
+        gitcmd -C $DIR_WEB/ ${*:2} >&3
         ;;
 
     clean)
