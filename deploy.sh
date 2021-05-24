@@ -857,7 +857,9 @@ case $1 in
     realclean)
         realclean
         ;;
-
+    log)
+        tail -q -f $DIR_WORK/log/apache2/error.log -f $DIR_WORK/log/apache2/access.log -f $DIR_WORK/log/mysql/error.log >&3
+        ;;
     *)
         display_usage
         ;;
