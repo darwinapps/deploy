@@ -588,14 +588,15 @@ function environment_setup {
 
     if [[ $MYSQL_DATABASE ]]; then
         DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-mysql.yml")
+    
+        if [[ $MYSQL_PORT_MAP ]]; then
+            if [[ ! $MYSQL_PORT ]]; then
+                IFS=: read -r MYSQL_EXTERNAL_PORT MYSQL_PORT <<< "$MYSQL_PORT_MAP"
+            fi
+            DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-mysql-ports.yml")
+        fi
     fi
 
-    if [[ $MYSQL_PORT_MAP ]]; then
-        if [[ ! $MYSQL_PORT ]]; then
-            IFS=: read -r MYSQL_EXTERNAL_PORT MYSQL_PORT <<< "$MYSQL_PORT_MAP"
-        fi
-        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-mysql-ports.yml")
-    fi
     MYSQL_PORT=${MYSQL_PORT:-3306}
 
 
@@ -698,8 +699,8 @@ case $1 in
             echo_green "running preinstall function";
             preinstall
 
-            if [[ -e "${DIR_WORK}/Dockerfile.${PROJECT}" ]]; then
-                APP_DOCKERFILES+=("${DIR_WORK}/Dockerfile.${PROJECT}")
+            if [[ -e "${DIR_DOCKERFILES}/Dockerfile.${PROJECT}" ]]; then
+                APP_DOCKERFILES+=("${DIR_DOCKERFILES}/Dockerfile.${PROJECT}")
             fi
         fi
 
@@ -740,6 +741,7 @@ case $1 in
             --build-arg MAILGUN_USER=$MAILGUN_USER \
             --build-arg MAILGUN_PASSWORD=$MAILGUN_PASSWORD \
             --build-arg DIR_UNITS=$DIR_UNITS \
+            --build-arg DIR_SCRIPTS=$DIR_SCRIPTS \
             -f - \
             -t $APP_IMAGE . || exit 1
         printf "\n"
@@ -789,6 +791,8 @@ case $1 in
 
         [[ $2 == "-d" ]] || progress 90 "Wait 2-3 min. Exit: ctrl+c"
         [[ $2 == "-d" ]] || progress 95 "\n"
+
+        echo ${DOCKER_COMPOSE_ARGS[@]}
 
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} $@
         ;;
