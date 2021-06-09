@@ -5,7 +5,7 @@ exec 3>&1
 # Clearing all these variables occurs because when the script is restarted (self_update), these variables contain data from the first run
 MYSQL_DOCKERFILE=""; MYSQL_BASE_IMAGE=""; MYSQL_PORT=""
 INNODB_LOG_FILE_SIZE=""; APP_TYPE=""; AWS_FILENAME_DB=""
-APP_BASE_IMAGE=""
+APACHE_IMAGE=""
 ###
 
 
@@ -154,6 +154,7 @@ USER mapped
     echo "$DOCKERFILE" | docker build -f - \
         --build-arg USERID=$USERID \
         --build-arg GROUPID=$GROUPID \
+        -t aws_cli \
         . -q
 }
 
@@ -434,18 +435,46 @@ function display_usage {
 } >&3
 
 
-function init_base_image {
-    APP_BASE_IMAGE=${APP_BASE_IMAGE:-php:7.2-apache}
+function init_apache_image {
+    APACHE_IMAGE=${APACHE_IMAGE:-php:7.2-apache}
 
     # username:password@hostname:port
-    IFS=@ read -r USERNAMEPASSWORD REGISTRYIMAGE <<< "${APP_BASE_IMAGE}"
+    IFS=@ read -r USERNAMEPASSWORD REGISTRYIMAGE <<< "${APACHE_IMAGE}"
     IFS=: read -r USERNAME PASSWORD <<< "${USERNAMEPASSWORD}"
     IFS=/ read -r SOURCE_IMAGE TARGET_IMAGE_TAG <<< "${REGISTRYIMAGE}"
     IFS=: read -r TARGET_IMAGE TAG <<< "${TARGET_IMAGE_TAG}"
 
     AWS_REGION_IMAGE=$(sed 's/.*\.\(.*\)\..*/\1/' <<< `expr "$SOURCE_IMAGE" : '.*\(\..*\.amazonaws\)'`)
 
-    if [[ $TARGET_IMAGE == "apache-php" ]]; then PHP_VERSION=$TAG; fi
+    if [[ ! -z ${USERNAME} ]]; then
+        echo_green "Docker login to registry..."
+
+        if [[ -z ${AWS_REGION_IMAGE} ]]; then
+            echo $PASSWORD | docker login --username $USERNAME --password-stdin https://$REGISTRYIMAGE
+        else
+            AWSID=$(get_aws_cli)
+
+            docker run --rm -it \
+                -e AWS_ACCESS_KEY_ID=$USERNAME \
+                -e AWS_SECRET_ACCESS_KEY=$PASSWORD \
+                -e AWS_DEFAULT_REGION=$AWS_REGION_IMAGE \
+                $AWSID \
+                    aws ecr get-login-password | docker login --username AWS --password-stdin $SOURCE_IMAGE
+        fi
+
+        APACHE_IMAGE=$REGISTRYIMAGE
+    fi
+}
+
+function init_php_fpm_image {
+    # username:password@hostname:port
+    IFS=@ read -r USERNAMEPASSWORD REGISTRYIMAGE <<< "${PHP_FPM_IMAGE}"
+    IFS=: read -r USERNAME PASSWORD <<< "${USERNAMEPASSWORD}"
+    IFS=/ read -r SOURCE_IMAGE TARGET_IMAGE_TAG <<< "${REGISTRYIMAGE}"
+    IFS=: read -r TARGET_IMAGE TAG <<< "${TARGET_IMAGE_TAG}"
+    IFS=- read -r PHP_VERSION APP <<< "${TAG}"
+
+    AWS_REGION_IMAGE=$(sed 's/.*\.\(.*\)\..*/\1/' <<< `expr "$SOURCE_IMAGE" : '.*\(\..*\.amazonaws\)'`)
 
     if [[ ! -z ${USERNAME} ]]; then
         echo_green "Docker login to registry..."
@@ -462,7 +491,7 @@ function init_base_image {
                     aws ecr get-login-password | docker login --username AWS --password-stdin $SOURCE_IMAGE
         fi
 
-        APP_BASE_IMAGE=$REGISTRYIMAGE
+        PHP_FPM_IMAGE=$REGISTRYIMAGE
     fi
 }
 
@@ -559,15 +588,16 @@ function environment_setup {
 
     MYSQL_CONTAINER="$PROJECT-mysql"
     MYSQL_IMAGE=$MYSQL_CONTAINER
-    MYSQL_DOCKERFILE=$DIR_DOCKERFILES"/"${MYSQL_DOCKERFILE:-Dockerfile.mysql}
+    MYSQL_DOCKERFILE=$DIR_DOCKERFILES"/"${MYSQL_DOCKERFILE:-Dockerfile.app.mysql}
     MYSQL_BASE_IMAGE=${MYSQL_BASE_IMAGE:-mysql:5.6}
     INNODB_LOG_FILE_SIZE=${INNODB_LOG_FILE_SIZE:-"16M"}
 
-    APP_CONTAINER="$PROJECT-app"
-    APP_IMAGE=$APP_CONTAINER
-    APP_DOCKERFILES=($DIR_DOCKERFILES"/Dockerfile.app.${BASE_APP_TYPE:-apache}")
+    APACHE_CONTAINER="$PROJECT-apache"
+    PHP_FPM_CONTAINER="$PROJECT-php-fpm"
+    APACHE_DOCKERFILE=($DIR_DOCKERFILES"/Dockerfile.app.apache")
+    PHP_FPM_DOCKERFILE=($DIR_DOCKERFILES"/Dockerfile.app.php-fpm")
+    APP_DOCKERFILES=""
     APP_TYPE=${APP_TYPE:-empty}
-
 
 
     VERS_COMPOSER=${COMPOSER:-1.10.16}
@@ -576,24 +606,27 @@ function environment_setup {
 
     AWS_FILENAME_DB=${AWS_FILENAME_DB:-latest.sql.gz}
 
-
     if [[ -e "${DIR_DOCKERFILES}/Dockerfile.${APP_TYPE}" ]]; then
         APP_DOCKERFILES+=("${DIR_DOCKERFILES}/Dockerfile.${APP_TYPE}")
     fi
 
-    APACHE_DOCUMENT_ROOT=/var/www/html/${APP_ROOT%/}
+    WEB_DOCUMENT_ROOT=/var/www/html/${WEB_ROOT%/}
 
-    DOCKER_COMPOSE_ARGS=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-${BASE_APP_TYPE:-apache}.yml")
+    DOCKER_COMPOSE_ARGS=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-apache.yml")
+
+    if [[ $PHP_FPM_IMAGE ]]; then
+        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-php-fpm.yml")
+    fi
 
 
     if [[ $MYSQL_DATABASE ]]; then
-        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-mysql.yml")
+        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-mysql.yml")
     
         if [[ $MYSQL_PORT_MAP ]]; then
             if [[ ! $MYSQL_PORT ]]; then
                 IFS=: read -r MYSQL_EXTERNAL_PORT MYSQL_PORT <<< "$MYSQL_PORT_MAP"
             fi
-            DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-mysql-ports.yml")
+            DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-mysql-ports.yml")
         fi
     fi
 
@@ -601,11 +634,11 @@ function environment_setup {
 
 
 
-    if [[ $APP_PORT_MAP ]]; then
+    if [[ $APACHE_PORT_MAP ]]; then
         DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-ports.yml")
     fi
 
-    if [[ $APP_PORT_MAP_SSL ]]; then
+    if [[ $APACHE_PORT_MAP_SSL ]]; then
         DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-ssl-ports.yml")
     fi
 
@@ -692,7 +725,6 @@ case $1 in
         self_update "$@"
 
         InitFolderAndFiles
-        init_base_image
         ssl_certificate_pull
         
         if [[ $(declare -F preinstall) ]]; then
@@ -706,12 +738,12 @@ case $1 in
 
         
         if [[ $MYSQL_DATABASE ]] && [[ $MYSQL_DOCKERFILE ]]; then
-            progress 10 "Docker pull"
+            progress 10 "Docker pull MySQL"
             printf "\n\e[1;34m"
             docker pull ${MYSQL_BASE_IMAGE}
             printf "\n\e[0m"
             
-            progress 20 "Docker build"
+            progress 20 "Docker build MySQL"
             docker --log-level "error" build \
                 --build-arg INNODB_LOG_FILE_SIZE=$INNODB_LOG_FILE_SIZE \
                 --build-arg MYSQL_BASE_IMAGE=$MYSQL_BASE_IMAGE \
@@ -722,29 +754,54 @@ case $1 in
             printf "\n"
         fi
 
-        progress 30 "Docker pull"
-        printf "\n\e[1;34m"
-        docker pull ${APP_BASE_IMAGE}
-        printf "\n\e[0m"
+        if [[ $APACHE_IMAGE ]]; then
+            init_apache_image
+    
+            progress 30 "Docker pull Apache"
+            printf "\n\e[1;34m"
+            docker pull ${APACHE_IMAGE}
+            printf "\n\e[0m"
 
-        progress 40 "Docker build"
-        cat ${APP_DOCKERFILES[@]} | docker --log-level "error" build \
-            --build-arg APP_BASE_IMAGE=$APP_BASE_IMAGE \
-            --build-arg USERID=$USERID \
-            --build-arg GROUPID=$GROUPID \
-            --build-arg PROJECT=$PROJECT \
-            --build-arg PHP_VERSION=$PHP_VERSION \
-            --build-arg APP_TYPE=$APP_TYPE \
-            --build-arg APACHE_DOCUMENT_ROOT=$APACHE_DOCUMENT_ROOT \
-            --build-arg PHP_SHORT_OPEN_TAG=$PHP_SHORT_OPEN_TAG \
-            --build-arg VERS_COMPOSER=$VERS_COMPOSER \
-            --build-arg MAILGUN_USER=$MAILGUN_USER \
-            --build-arg MAILGUN_PASSWORD=$MAILGUN_PASSWORD \
-            --build-arg DIR_UNITS=$DIR_UNITS \
-            --build-arg DIR_SCRIPTS=$DIR_SCRIPTS \
-            -f - \
-            -t $APP_IMAGE . || exit 1
-        printf "\n"
+            progress 35 "Docker build Apache"
+            cat $APACHE_DOCKERFILE | docker --log-level "error" build \
+                --build-arg APACHE_IMAGE=$APACHE_IMAGE \
+                --build-arg USERID=$USERID \
+                --build-arg GROUPID=$GROUPID \
+                --build-arg PROJECT=$PROJECT \
+                --build-arg WEB_DOCUMENT_ROOT=$WEB_DOCUMENT_ROOT \
+                --build-arg DIR_APACHE_CONFIGS=$DIR_APACHE_CONFIGS \
+                -f - \
+                -t $APACHE_CONTAINER . || exit 1
+            printf "\n"
+        fi
+
+        if [[ $PHP_FPM_IMAGE ]]; then
+            init_php_fpm_image
+            
+            progress 40 "Docker pull PHP-FPM"
+            printf "\n\e[1;34m"
+            docker pull ${PHP_FPM_IMAGE}
+            printf "\n\e[0m"
+
+            progress 45 "Docker build PHP-FPM"
+            APP_DOCKERFILES+=${PHP_FPM_DOCKERFILE}
+            cat ${APP_DOCKERFILES[@]} | docker --log-level "error" build \
+                --build-arg PHP_FPM_IMAGE=$PHP_FPM_IMAGE \
+                --build-arg USERID=$USERID \
+                --build-arg GROUPID=$GROUPID \
+                --build-arg PHP_VERSION=$PHP_VERSION \
+                --build-arg APP_TYPE=$APP_TYPE \
+                --build-arg WEB_DOCUMENT_ROOT=$WEB_DOCUMENT_ROOT \
+                --build-arg PHP_SHORT_OPEN_TAG=$PHP_SHORT_OPEN_TAG \
+                --build-arg VERS_COMPOSER=$VERS_COMPOSER \
+                --build-arg MAILGUN_USER=$MAILGUN_USER \
+                --build-arg MAILGUN_PASSWORD=$MAILGUN_PASSWORD \
+                --build-arg DIR_UNITS=$DIR_UNITS \
+                -f - \
+                -t $PHP_FPM_CONTAINER . || exit 1
+            printf "\n"       
+        fi
+
 
         progress 50 "Get latest DB Dump"
         get_latest_db_dump $AWS_FILENAME_DB
@@ -791,8 +848,6 @@ case $1 in
 
         [[ $2 == "-d" ]] || progress 90 "Wait 2-3 min. Exit: ctrl+c"
         [[ $2 == "-d" ]] || progress 95 "\n"
-
-        echo ${DOCKER_COMPOSE_ARGS[@]}
 
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} $@
         ;;

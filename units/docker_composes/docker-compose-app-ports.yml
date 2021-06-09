@@ -1,6 +1,6 @@
 version: '3.1'
 
 services:
-    webapp:
+    apache:
         ports:
-            - $APP_PORT_MAP
+            - $APACHE_PORT_MAP

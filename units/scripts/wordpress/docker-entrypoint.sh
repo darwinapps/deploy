@@ -24,20 +24,12 @@ file_env() {
 	unset "$fileVar"
 }
 
-cd "${APACHE_DOCUMENT_ROOT}"
+cd "${WEB_DOCUMENT_ROOT}"
 
-if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
+if [[ "$1" == apache2* ]] || [[ "$1" == php-fpm* ]]; then
 	if [ "$(id -u)" = '0' ]; then
-		case "$1" in
-			apache2*)
-				user="${APACHE_RUN_USER:-www-data}"
-				group="${APACHE_RUN_GROUP:-www-data}"
-				;;
-			*) # php-fpm
-				user='www-data'
-				group='www-data'
-				;;
-		esac
+		user="${APACHE_RUN_USER:-www-data}"
+		group="${APACHE_RUN_GROUP:-www-data}"
 	else
 		user="$(id -u)"
 		group="$(id -g)"
@@ -84,7 +76,6 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		: "${WORDPRESS_DB_NAME:=${MYSQL_DATABASE:-}}"
 		: "${WORDPRESS_DB_HOST:=${MYSQL_HOST:-}}"
 	fi
-
 
 	# only touch "wp-config.php" if we have environment-supplied configuration values
 	if [ "$haveConfig" ]; then

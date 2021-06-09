@@ -1,15 +1,12 @@
 version: '3.1'
 
 services:
-    apache:
-        container_name: $APACHE_CONTAINER
-        image: $APACHE_CONTAINER
+    php-fpm:
+        container_name: $PHP_FPM_CONTAINER
+        image: $PHP_FPM_CONTAINER
         volumes:
             - "${DIR_WEB}/:/var/www/html/:delegated"
-            - "${DIR_WORK}/log/apache2/access.log:/var/log/apache2/access.log:delegated"
-            - "${DIR_WORK}/log/apache2/error.log:/var/log/apache2/error.log:delegated"
             - "${DIR_PROJECT}/config:/tmp/config:delegated"
-            - "${DIR_SSL}/:/etc/apache2/ssl/:delegated"
         environment:
             DOCKERIZED: 1
             WEB_DOCUMENT_ROOT: $WEB_DOCUMENT_ROOT

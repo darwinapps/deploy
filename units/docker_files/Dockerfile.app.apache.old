@@ -154,7 +154,7 @@ ENV APACHE_RUN_USER mapped
 ENV APACHE_RUN_GROUP mapped
 
 ARG PROJECT
-ARG APACHE_DOCUMENT_ROOT
+ARG WEB_DOCUMENT_ROOT
 
 RUN sed -ri -e "s!#ServerName .*!ServerName $PROJECT!" /etc/apache2/sites-enabled/000-default.conf
-RUN sed -ri -e "s!/var/www/html!${APACHE_DOCUMENT_ROOT}!g" /etc/apache2/apache2.conf /etc/apache2/sites-enabled/*.conf
+RUN sed -ri -e "s!/var/www/html!${WEB_DOCUMENT_ROOT}!g" /etc/apache2/apache2.conf /etc/apache2/sites-enabled/*.conf
