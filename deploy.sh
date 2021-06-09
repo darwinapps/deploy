@@ -824,7 +824,7 @@ case $1 in
         if [[ $(declare -F postinstall) ]]; then
             echo_green "running postinstall function";
             docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} -f ${DIR_DOCKERCOMPOSES}/docker-compose-app-user.yml \
-                run --no-deps --rm webapp \
+                run --no-deps --rm apache \
                     bash -c "source /tmp/config && HOME=/tmp && cd /var/www/html && postinstall"
 
         fi
@@ -855,13 +855,13 @@ case $1 in
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} ps >&3
         ;;
     run)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} run --no-deps --rm webapp su mapped -c "cd /var/www/html; HOME=/tmp; ${*:2}"
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} run --no-deps --rm apache su mapped -c "cd /var/www/html; HOME=/tmp; ${*:2}"
         ;;
     su-run)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} run --no-deps --rm webapp "${@:2}"
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} run --no-deps --rm apache "${@:2}"
         ;;	
     exec)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} exec webapp ${*:2}
+        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} exec apache ${*:2}
         ;;
 
     dump-database)
