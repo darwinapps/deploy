@@ -1,8 +1,8 @@
-ARG APP_BASE_IMAGE
-FROM $APP_BASE_IMAGE
+ARG NODE_IMAGE
+FROM $NODE_IMAGE
 
-# APP_BASE_IMAGE must be declared again after FROM
-ARG APP_BASE_IMAGE
+# NODE_IMAGE must be declared again after FROM
+ARG NODE_IMAGE
 
 # --- fixing user permissions
 
@@ -19,6 +19,5 @@ COPY ${DIR_SCRIPTS}/${APP_TYPE}/docker-entrypoint.sh /usr/local/bin/docker-entry
 RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
 
 USER mapped
-
 
 ENTRYPOINT ["docker-entrypoint.sh"]

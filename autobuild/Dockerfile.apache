@@ -14,4 +14,4 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN apt-get install -y --no-install-recommends mysql-client || apt-get install -y --no-install-recommends default-mysql-client
 
 RUN a2dismod mpm_prefork
-RUN a2enmod rewrite expires mpm_event proxy proxy_fcgi ssl http2
+RUN a2enmod rewrite expires mpm_event proxy proxy_http proxy_fcgi ssl http2

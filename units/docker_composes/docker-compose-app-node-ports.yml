@@ -1,0 +1,6 @@
+version: '3.1'
+
+services:
+    node:
+        ports:
+            - $NODE_PORT_MAP

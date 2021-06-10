@@ -495,6 +495,35 @@ function init_php_fpm_image {
     fi
 }
 
+function init_node_image {
+    # username:password@hostname:port
+    IFS=@ read -r USERNAMEPASSWORD REGISTRYIMAGE <<< "${NODE_IMAGE}"
+    IFS=: read -r USERNAME PASSWORD <<< "${USERNAMEPASSWORD}"
+    IFS=/ read -r SOURCE_IMAGE TARGET_IMAGE_TAG <<< "${REGISTRYIMAGE}"
+    IFS=: read -r TARGET_IMAGE TAG <<< "${TARGET_IMAGE_TAG}"
+
+    AWS_REGION_IMAGE=$(sed 's/.*\.\(.*\)\..*/\1/' <<< `expr "$SOURCE_IMAGE" : '.*\(\..*\.amazonaws\)'`)
+
+    if [[ ! -z ${USERNAME} ]]; then
+        echo_green "Docker login to registry..."
+
+        if [[ -z ${AWS_REGION_IMAGE} ]]; then
+            echo $PASSWORD | docker login --username $USERNAME --password-stdin https://$REGISTRYIMAGE
+        else
+            AWSID=$(get_aws_cli)
+
+            docker run --rm -it \
+                -e AWS_ACCESS_KEY_ID=$USERNAME \
+                -e AWS_SECRET_ACCESS_KEY=$PASSWORD \
+                -e AWS_DEFAULT_REGION=$AWS_REGION_IMAGE \
+                $AWSID \
+                    aws ecr get-login-password | docker login --username AWS --password-stdin $SOURCE_IMAGE
+        fi
+
+        NODE_IMAGE=$REGISTRYIMAGE
+    fi
+}
+
 function list_projects {
     projects_update
 
@@ -594,8 +623,12 @@ function environment_setup {
 
     APACHE_CONTAINER="$PROJECT-apache"
     PHP_FPM_CONTAINER="$PROJECT-php-fpm"
+    NODE_CONTAINER="$PROJECT-node"
+
     APACHE_DOCKERFILE=($DIR_DOCKERFILES"/Dockerfile.app.apache")
     PHP_FPM_DOCKERFILE=($DIR_DOCKERFILES"/Dockerfile.app.php-fpm")
+    NODE_DOCKERFILE=($DIR_DOCKERFILES"/Dockerfile.app.node")
+    
     APP_DOCKERFILES=""
     APP_TYPE=${APP_TYPE:-empty}
 
@@ -612,16 +645,16 @@ function environment_setup {
 
     WEB_DOCUMENT_ROOT=/var/www/html/${WEB_ROOT%/}
 
-    DOCKER_COMPOSE_ARGS=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-apache.yml")
-
-    if [[ $PHP_FPM_IMAGE ]]; then
-        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-php-fpm.yml")
-    fi
-
+    if [[ $APACHE_IMAGE ]]; then DOCKER_COMPOSE_ARGS=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-apache.yml"); fi
+    if [[ $PHP_FPM_IMAGE ]]; then DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-php-fpm.yml"); fi
+    if [[ $NODE_IMAGE ]]; then DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-node.yml"); fi
 
     if [[ $MYSQL_DATABASE ]]; then
         DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-mysql.yml")
-    
+
+        if [[ $APACHE_IMAGE ]]; then DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-mysql-apache.yml"); fi
+        if [[ $PHP_FPM_IMAGE ]]; then DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-mysql-php-fpm.yml"); fi
+
         if [[ $MYSQL_PORT_MAP ]]; then
             if [[ ! $MYSQL_PORT ]]; then
                 IFS=: read -r MYSQL_EXTERNAL_PORT MYSQL_PORT <<< "$MYSQL_PORT_MAP"
@@ -635,12 +668,20 @@ function environment_setup {
 
 
     if [[ $APACHE_PORT_MAP ]]; then
-        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-ports.yml")
+        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-apache-ports.yml")
     fi
 
     if [[ $APACHE_PORT_MAP_SSL ]]; then
-        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-ssl-ports.yml")
+        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-apache-ssl-ports.yml")
     fi
+
+    if [[ $NODE_PORT_MAP ]]; then
+        if [[ ! $NODE_PORT ]]; then
+            IFS=: read -r NODE_EXTERNAL_PORT NODE_PORT <<< "$NODE_PORT_MAP"
+        fi
+        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-node-ports.yml")
+    fi
+    NODE_PORT=${NODE_PORT:-3000}
 
     if [[ $APP_NETWORK ]]; then
         DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-network.yml")
@@ -743,7 +784,7 @@ case $1 in
             docker pull ${MYSQL_BASE_IMAGE}
             printf "\n\e[0m"
             
-            progress 20 "Docker build MySQL"
+            progress 15 "Docker build MySQL"
             docker --log-level "error" build \
                 --build-arg INNODB_LOG_FILE_SIZE=$INNODB_LOG_FILE_SIZE \
                 --build-arg MYSQL_BASE_IMAGE=$MYSQL_BASE_IMAGE \
@@ -756,20 +797,25 @@ case $1 in
 
         if [[ $APACHE_IMAGE ]]; then
             init_apache_image
-    
-            progress 30 "Docker pull Apache"
+
+            progress 20 "Docker pull Apache"
             printf "\n\e[1;34m"
             docker pull ${APACHE_IMAGE}
             printf "\n\e[0m"
 
-            progress 35 "Docker build Apache"
+            APACHE_CONFIG=${DIR_APACHE_CONFIGS}/apache-default.conf
+            if [[ $PHP_FPM_IMAGE ]]; then APACHE_CONFIG=${DIR_APACHE_CONFIGS}/apache-fpm.conf; fi
+            if [[ $NODE_IMAGE ]]; then APACHE_CONFIG=${DIR_APACHE_CONFIGS}/apache-node.conf; fi
+
+            progress 25 "Docker build Apache"
             cat $APACHE_DOCKERFILE | docker --log-level "error" build \
                 --build-arg APACHE_IMAGE=$APACHE_IMAGE \
                 --build-arg USERID=$USERID \
                 --build-arg GROUPID=$GROUPID \
                 --build-arg PROJECT=$PROJECT \
                 --build-arg WEB_DOCUMENT_ROOT=$WEB_DOCUMENT_ROOT \
-                --build-arg DIR_APACHE_CONFIGS=$DIR_APACHE_CONFIGS \
+                --build-arg APACHE_CONFIG=$APACHE_CONFIG \
+                --build-arg NODE_PORT=$NODE_PORT \
                 -f - \
                 -t $APACHE_CONTAINER . || exit 1
             printf "\n"
@@ -778,12 +824,12 @@ case $1 in
         if [[ $PHP_FPM_IMAGE ]]; then
             init_php_fpm_image
             
-            progress 40 "Docker pull PHP-FPM"
+            progress 30 "Docker pull PHP-FPM"
             printf "\n\e[1;34m"
             docker pull ${PHP_FPM_IMAGE}
             printf "\n\e[0m"
 
-            progress 45 "Docker build PHP-FPM"
+            progress 35 "Docker build PHP-FPM"
             APP_DOCKERFILES+=${PHP_FPM_DOCKERFILE}
             cat ${APP_DOCKERFILES[@]} | docker --log-level "error" build \
                 --build-arg PHP_FPM_IMAGE=$PHP_FPM_IMAGE \
@@ -799,6 +845,27 @@ case $1 in
                 --build-arg DIR_UNITS=$DIR_UNITS \
                 -f - \
                 -t $PHP_FPM_CONTAINER . || exit 1
+            printf "\n"       
+        fi
+
+        if [[ $NODE_IMAGE ]]; then
+            init_node_image
+
+            progress 40 "Docker pull Node"
+            printf "\n\e[1;34m"
+            docker pull ${NODE_IMAGE}
+            printf "\n\e[0m"
+
+            progress 45 "Docker build Node"
+            APP_DOCKERFILES+=${NODE_DOCKERFILE}
+            cat ${APP_DOCKERFILES[@]} | docker --log-level "error" build \
+                --build-arg NODE_IMAGE=$NODE_IMAGE \
+                --build-arg USERID=$USERID \
+                --build-arg GROUPID=$GROUPID \
+                --build-arg APP_TYPE=$APP_TYPE \
+                --build-arg DIR_SCRIPTS=$DIR_SCRIPTS \
+                -f - \
+                -t $NODE_CONTAINER . || exit 1
             printf "\n"       
         fi
 
@@ -848,6 +915,10 @@ case $1 in
 
         [[ $2 == "-d" ]] || progress 90 "Wait 2-3 min. Exit: ctrl+c"
         [[ $2 == "-d" ]] || progress 95 "\n"
+
+        echo
+        echo ${DOCKER_COMPOSE_ARGS[@]}
+        echo
 
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} $@
         ;;
