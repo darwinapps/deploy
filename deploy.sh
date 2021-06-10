@@ -916,10 +916,6 @@ case $1 in
         [[ $2 == "-d" ]] || progress 90 "Wait 2-3 min. Exit: ctrl+c"
         [[ $2 == "-d" ]] || progress 95 "\n"
 
-        echo
-        echo ${DOCKER_COMPOSE_ARGS[@]}
-        echo
-
         docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} $@
         ;;
     status)
