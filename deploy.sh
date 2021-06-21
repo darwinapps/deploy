@@ -688,8 +688,8 @@ function environment_setup {
     fi
 
 
-    if [[ -e "${DIR_DOCKERCOMPOSES}/docker-compose.${PROJECT}.yml" ]]; then
-        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose.${PROJECT}.yml")
+    if [[ -e "${DIR_WORK}/docker-compose.${PROJECT}.yml" ]]; then
+        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_WORK}/docker-compose.${PROJECT}.yml")
     fi
 }
 
@@ -772,8 +772,8 @@ case $1 in
             echo_green "running preinstall function";
             preinstall
 
-            if [[ -e "${DIR_DOCKERFILES}/Dockerfile.${PROJECT}" ]]; then
-                APP_DOCKERFILES+=("${DIR_DOCKERFILES}/Dockerfile.${PROJECT}")
+            if [[ -e "${DIR_WORK}/Dockerfile.${PROJECT}" ]]; then
+                APP_DOCKERFILES+=("${DIR_WORK}/Dockerfile.${PROJECT}")
             fi
         fi
 
