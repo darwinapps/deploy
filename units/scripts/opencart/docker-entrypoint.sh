@@ -2,25 +2,17 @@
 
 set -euo pipefail
 
-if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
-	if [ "$(id -u)" = '0' ]; then
-		case "$1" in
-			apache2*)
-				user="${APACHE_RUN_USER:-www-data}"
-				group="${APACHE_RUN_GROUP:-www-data}"
-				;;
-			*) # php-fpm
-				user='www-data'
-				group='www-data'
-				;;
-		esac
-	else
-		user="$(id -u)"
-		group="$(id -g)"
-	fi
+if [[ "$1" == apache2* ]] || [[ "$1" == php-fpm* ]]; then
+        if [ "$(id -u)" = '0' ]; then
+                user="${APACHE_RUN_USER:-www-data}"
+                group="${APACHE_RUN_GROUP:-www-data}"
+        else
+                user="$(id -u)"
+                group="$(id -g)"
+        fi
 
-	if [ ! -e $APP_ROOT/config.php ]; then
-		cat <<EOF > $APP_ROOT/config.php
+	if [ ! -e /var/www/html/${WEB_ROOT}config.php ]; then
+		cat <<EOF > /var/www/html/${WEB_ROOT}config.php
 <?php
 // HTTP
 define('HTTP_SERVER', 'http://' . \$_SERVER['HTTP_HOST'] .'/');
@@ -29,17 +21,17 @@ define('HTTP_SERVER', 'http://' . \$_SERVER['HTTP_HOST'] .'/');
 define('HTTPS_SERVER', 'http://' . \$_SERVER['HTTP_HOST'] .'/');
 
 // DIR
-define('DIR_APPLICATION', '/var/www/html/${APP_ROOT}catalog/');
-define('DIR_SYSTEM', '/var/www/html/${APP_ROOT}system/');
-define('DIR_IMAGE', '/var/www/html/${APP_ROOT}image/');
-define('DIR_LANGUAGE', '/var/www/html/${APP_ROOT}catalog/language/');
-define('DIR_TEMPLATE', '/var/www/html/${APP_ROOT}catalog/view/theme/');
-define('DIR_CONFIG', '/var/www/html/${APP_ROOT}system/config/');
-define('DIR_CACHE', '/var/www/html/${APP_ROOT}system/storage/cache/');
-define('DIR_DOWNLOAD', '/var/www/html/${APP_ROOT}system/storage/download/');
-define('DIR_LOGS', '/var/www/html/${APP_ROOT}system/storage/logs/');
-define('DIR_MODIFICATION', '/var/www/html/${APP_ROOT}system/storage/modification/');
-define('DIR_UPLOAD', '/var/www/html/${APP_ROOT}system/storage/upload/');
+define('DIR_APPLICATION', '/var/www/html/${WEB_ROOT}catalog/');
+define('DIR_SYSTEM', '/var/www/html/${WEB_ROOT}system/');
+define('DIR_IMAGE', '/var/www/html/${WEB_ROOT}image/');
+define('DIR_LANGUAGE', '/var/www/html/${WEB_ROOT}catalog/language/');
+define('DIR_TEMPLATE', '/var/www/html/${WEB_ROOT}catalog/view/theme/');
+define('DIR_CONFIG', '/var/www/html/${WEB_ROOT}system/config/');
+define('DIR_CACHE', '/var/www/html/${WEB_ROOT}system/storage/cache/');
+define('DIR_DOWNLOAD', '/var/www/html/${WEB_ROOT}system/storage/download/');
+define('DIR_LOGS', '/var/www/html/${WEB_ROOT}system/storage/logs/');
+define('DIR_MODIFICATION', '/var/www/html/${WEB_ROOT}system/storage/modification/');
+define('DIR_UPLOAD', '/var/www/html/${WEB_ROOT}system/storage/upload/');
 
 // DB
 define('DB_DRIVER', 'mysqli');
@@ -52,8 +44,8 @@ define('DB_PREFIX', 'oc_');
 EOF
 	fi
 
-	if [ ! -e $APP_ROOT/admin/config.php ]; then
-		cat <<EOF > $APP_ROOT/admin/config.php
+	if [ ! -e /var/www/html/${WEB_ROOT}admin/config.php ]; then
+		cat <<EOF > /var/www/html/${WEB_ROOT}admin/config.php
 <?php
 // HTTP
 define('HTTP_SERVER', 'http://' . \$_SERVER['HTTP_HOST'] .'/admin/');
@@ -64,19 +56,19 @@ define('HTTPS_SERVER', 'http://' . \$_SERVER['HTTP_HOST'] .'/admin/');
 define('HTTPS_CATALOG', 'http://' . \$_SERVER['HTTP_HOST'] .'/');
 
 // DIR
-define('DIR_APPLICATION', '/var/www/html/${APP_ROOT}admin/');
-define('DIR_SYSTEM', '/var/www/html/${APP_ROOT}system/');
-define('DIR_IMAGE', '/var/www/html/${APP_ROOT}image/');
-define('DIR_LANGUAGE', '/var/www/html/${APP_ROOT}admin/language/');
-define('DIR_TEMPLATE', '/var/www/html/${APP_ROOT}admin/view/template/');
-define('DIR_CONFIG', '/var/www/html/${APP_ROOT}system/config/');
-define('DIR_CACHE', '/var/www/html/${APP_ROOT}system/storage/cache/');
-define('DIR_DOWNLOAD', '/var/www/html/${APP_ROOT}system/storage/download/');
-define('DIR_LOGS', '/var/www/html/${APP_ROOT}system/storage/logs/');
-define('DIR_MODIFICATION', '/var/www/html/${APP_ROOT}system/storage/modification/');
-define('DIR_UPLOAD', '/var/www/html/${APP_ROOT}system/storage/upload/');
-define('DIR_CATALOG', '/var/www/html/${APP_ROOT}catalog/');
-define('DIR_ATREX_UPLOAD', '/var/www/html/${APP_ROOT}atrex/');
+define('DIR_APPLICATION', '/var/www/html/${WEB_ROOT}admin/');
+define('DIR_SYSTEM', '/var/www/html/${WEB_ROOT}system/');
+define('DIR_IMAGE', '/var/www/html/${WEB_ROOT}image/');
+define('DIR_LANGUAGE', '/var/www/html/${WEB_ROOT}admin/language/');
+define('DIR_TEMPLATE', '/var/www/html/${WEB_ROOT}admin/view/template/');
+define('DIR_CONFIG', '/var/www/html/${WEB_ROOT}system/config/');
+define('DIR_CACHE', '/var/www/html/${WEB_ROOT}system/storage/cache/');
+define('DIR_DOWNLOAD', '/var/www/html/${WEB_ROOT}system/storage/download/');
+define('DIR_LOGS', '/var/www/html/${WEB_ROOT}system/storage/logs/');
+define('DIR_MODIFICATION', '/var/www/html/${WEB_ROOT}system/storage/modification/');
+define('DIR_UPLOAD', '/var/www/html/${WEB_ROOT}system/storage/upload/');
+define('DIR_CATALOG', '/var/www/html/${WEB_ROOT}catalog/');
+define('DIR_ATREX_UPLOAD', '/var/www/html/${WEB_ROOT}atrex/');
 
 // DB
 define('DB_DRIVER', 'mysqli');
