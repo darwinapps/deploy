@@ -1,0 +1,83 @@
+# IMAGE_TAG php:7.2-fpm
+FROM ubuntu:18.04
+
+ENV TZ=Europe/Minsk
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    apt-transport-https \
+    apt-utils \
+    gnupg \
+    software-properties-common
+
+RUN add-apt-repository -y ppa:ondrej/php
+
+RUN apt-get install -y \
+    php7.2 \
+    php7.2-mysql \
+    php7.2-mysqli \
+    php7.2-pdo \
+    php7.2-gd \
+    php7.2-mbstring \
+    php7.2-imagick \
+    php7.2-dev \
+    php7.2-xml \
+    php7.2-fpm \
+    php7.2-curl \
+    curl \
+    git \
+    gzip \
+    unzip \
+    zip \
+    less \
+    libwebp-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libfreetype6-dev \
+    libgeoip-dev \
+    libmcrypt-dev \
+    libzip-dev \
+    tcpdump \
+    telnet \
+    net-tools \
+    nano \
+    wget \
+    ssh \
+    imagemagick \
+    libmagickwand-dev \
+    msmtp-mta
+
+RUN apt-get install -y --no-install-recommends mysql-client || apt-get install -y --no-install-recommends default-mysql-client
+
+RUN { \
+    echo 'opcache.memory_consumption=128'; \
+    echo 'opcache.interned_strings_buffer=8'; \
+    echo 'opcache.max_accelerated_files=4000'; \
+    echo 'opcache.revalidate_freq=0'; \
+    echo 'opcache.fast_shutdown=1'; \
+    echo 'opcache.enable_cli=1'; \
+} > /etc/php/7.2/mods-available/opcache-recommended.ini
+
+RUN { \
+    echo 'memory_limit=2G'; \
+    echo 'post_max_size=6152M'; \
+    echo 'upload_max_filesize=6144M'; \
+    echo 'max_execution_time=3600'; \
+    echo 'max_input_vars = 50000'; \
+    echo 'max_input_time=3600'; \
+    echo 'error_reporting=E_ALL'; \
+    echo 'display_errors=On'; \
+    echo 'display_startup_errors=On'; \
+    echo 'log_errors=On'; \
+    echo 'log_errors_max_len=0'; \
+    echo 'error_log=/dev/stderr'; \
+    echo 'date.timezone = "UTC"'; \
+} > /etc/php/7.2/fpm/php.ini
+
+RUN sed -ri -e "s;listen = .*;listen = 9000;" /etc/php/7.2/fpm/pool.d/www.conf
+RUN sed -ri -e "s;^user = .*;user = mapped;" /etc/php/7.2/fpm/pool.d/www.conf
+RUN sed -ri -e "s;^group = .*;group = mapped;" /etc/php/7.2/fpm/pool.d/www.conf
+
+RUN phpenmod -v php7.2 -s ALL opcache-recommended && phpenmod -v php7.2 -s ALL mbstring
+
+RUN cp /etc/init.d/php7.2-fpm /etc/init.d/php-fpm
