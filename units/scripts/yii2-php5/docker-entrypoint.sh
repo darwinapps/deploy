@@ -10,5 +10,6 @@ if [[ "$1" == apache2* ]] || [[ "$1" == php-fpm* ]]; then
 		user="$(id -u)"
 		group="$(id -g)"
 	fi
+fi
 
 exec "$@"

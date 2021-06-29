@@ -75,4 +75,4 @@ RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
 RUN mkdir -p /run/php
 
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["php-fpm7.4","-F"]
+CMD ["php-fpm","-F"]
