@@ -80,4 +80,4 @@ RUN sed -ri -e "s;^group = .*;group = mapped;" /etc/php/7.3/fpm/pool.d/www.conf
 
 RUN phpenmod -v php7.3 -s ALL opcache-recommended && phpenmod -v php7.3 -s ALL mbstring
 
-RUN cp /etc/init.d/php7.3-fpm /etc/init.d/php-fpm
+RUN ln -s /usr/sbin/php-fpm7.3 /usr/sbin/php-fpm
