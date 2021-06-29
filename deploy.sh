@@ -823,7 +823,7 @@ case $1 in
 
         if [[ $PHP_FPM_IMAGE ]]; then
             init_php_fpm_image
-            
+
             progress 30 "Docker pull PHP-FPM"
             printf "\n\e[1;34m"
             docker pull ${PHP_FPM_IMAGE}
