@@ -1,5 +1,3 @@
-ARG VERS_COMPOSER
-
 RUN curl -sL https://github.com/drush-ops/drush-launcher/releases/download/0.6.0/drush.phar > /usr/local/bin/drush && chmod a+x /usr/local/bin/drush
 
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
@@ -9,28 +7,8 @@ RUN curl -sL https://deb.nodesource.com/setup_8.x | bash -
 
 RUN apt-get update
 RUN apt-get install -y \
-        libfreetype6-dev \
-        libjpeg62-turbo-dev \
-        libmagickwand-dev \
         nodejs \
         yarn \
-        git \
-        xz-utils
-
-# RUN curl -sOL 'https://downloads.sourceforge.net/project/imagemagick/old-sources/6.x/6.7/ImageMagick-6.7.7-10.tar.gz'
-# RUN tar xvf ImageMagick-6.7.7-10.tar.gz
-
-RUN curl -sOL 'https://imagemagick.org/download/releases/ImageMagick-6.7.7-10.tar.xz'
-RUN tar xvf ImageMagick-6.7.7-10.tar.xz
-
-RUN (cd ImageMagick-6.7.7-10 && ./configure --with-heic=yes --with-webp=yes && make -j $(( $(nproc) * 2 )) && make install)
+        git
 
 RUN yarn global add gulp
-
-RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr --with-freetype-dir=/usr
-RUN docker-php-ext-install -j $(( $(nproc) * 2 )) gd pdo pdo_mysql opcache zip
-
-# RUN pecl install imagick
-# RUN docker-php-ext-enable imagick
-
-RUN (cd ~/ && (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer --version=$VERS_COMPOSER))

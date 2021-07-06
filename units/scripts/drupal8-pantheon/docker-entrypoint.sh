@@ -2,26 +2,18 @@
 
 set -euo pipefail
 
-if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
+if [[ "$1" == apache2* ]] || [[ "$1" == php-fpm* ]]; then
 	if [ "$(id -u)" = '0' ]; then
-		case "$1" in
-			apache2*)
-				user="${APACHE_RUN_USER:-www-data}"
-				group="${APACHE_RUN_GROUP:-www-data}"
-				;;
-			*) # php-fpm
-				user='www-data'
-				group='www-data'
-				;;
-		esac
+		user="${APACHE_RUN_USER:-www-data}"
+		group="${APACHE_RUN_GROUP:-www-data}"
 	else
 		user="$(id -u)"
 		group="$(id -g)"
 	fi
 
-	settingsf="/var/www/html/sites/default/settings.local.php";
+	settingsf="${WEB_DOCUMENT_ROOT}sites/default/settings.local.php";
 	if [ ! -f $settingsf ]; then
-		cp -a /var/www/html/sites/example.settings.local.php $settingsf
+		cp -a ${WEB_DOCUMENT_ROOT}sites/example.settings.local.php $settingsf
 		echo -e "\$databases['default']['default'] = array(\n" \
 			"  'driver' => 'mysql',\n" \
 			"  'database' => '${MYSQL_DATABASE}',\n" \
