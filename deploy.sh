@@ -746,7 +746,12 @@ case $1 in
     prepare)
         if [[ -n $2 ]]; then select_project "$@"
         else
-            if [[ -f ./config ]]; then select_project $1 "MyConfig"; fi
+            if [[ -f ./config ]]; then select_project $1 "MyConfig"
+            else
+                if [[ $SELFUPDATE == 'off' || $SELFUPDATE == 'OFF' ]]; then echo_red 'Self update off'
+                else projects_update
+                fi
+            fi
         fi
 
         environment_setup
