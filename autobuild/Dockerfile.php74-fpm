@@ -24,6 +24,7 @@ RUN apt-get install -y \
     php7.4-xml \
     php7.4-fpm \
     php7.4-curl \
+    php7.4-zip \
     curl \
     git \
     gzip \
