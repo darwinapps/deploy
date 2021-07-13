@@ -748,9 +748,7 @@ case $1 in
         else
             if [[ -f ./config ]]; then select_project $1 "MyConfig"
             else
-                if [[ $SELFUPDATE == 'off' || $SELFUPDATE == 'OFF' ]]; then echo_red 'Self update off'
-                else projects_update
-                fi
+                projects_update
             fi
         fi
 
