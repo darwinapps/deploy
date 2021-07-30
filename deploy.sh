@@ -52,7 +52,7 @@ function projects_update {
         local WORKDIR=${PWD}
         cd $DIR_PROJECTS
 
-        if ! (git status &> /dev/null); then
+        if [[ ! -d ./.git ]]; then
             git clone $REPOSITORY_PROJECTS .
         else
             git fetch
