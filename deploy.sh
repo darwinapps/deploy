@@ -44,22 +44,26 @@ function self_update {
 }
 
 function projects_update {
-    if [[ ! -d "$DIR_PROJECTS" ]]; then
-        if ! (git clone $REPOSITORY_PROJECTS $DIR_PROJECTS); then
-            echo_red "\nPossible, you not have access to the git repository with configuration files of projects\n"
-            exit 1
+    if [[ ! -d "$DIR_PROJECTS" ]]; then mkdir $DIR_PROJECTS; fi
+    if ! (git ls-remote $REPOSITORY_PROJECTS &> /dev/null); then
+        echo_red "\nPossible, you not have access to the git repository with configuration files of projects\n"
+    else
+
+        local WORKDIR=${PWD}
+        cd $DIR_PROJECTS
+
+        if ! (git status &> /dev/null); then
+            git clone $REPOSITORY_PROJECTS .
+        else
+            git fetch
+            if [[ -n $(git diff --name-only origin/master) ]]; then
+                echo_blue "\nFound a new versions configuration files of projects..."
+                git reset --hard origin/master
+            fi
         fi
+    
+        cd $WORKDIR
     fi
-
-    local WORKDIR=${PWD}
-    cd $DIR_PROJECTS
-
-    git fetch
-    if [[ -n $(git diff --name-only origin/master) ]]; then
-        echo_blue "\nFound a new versions configuration files of projects..."
-        git reset --hard origin/master
-    fi
-    cd $WORKDIR
 
     # Search for the config in the root of the program and add it to the list of configs
     if [[ -f ./config ]]; then
@@ -70,7 +74,6 @@ function projects_update {
     fi
     ###
 }
-
 
 function echo_green { printf "\e[1;32m${1}\n\e[0m"; }
 function echo_blue  { printf "\e[1;34m${1}\n\e[0m"; }
@@ -529,7 +532,7 @@ function list_projects {
 
     if [[ -d "$DIR_PROJECT" && -h "$DIR_PROJECT" ]]; then SELECTED_PROJECT=$(ls -l $DIR_PROJECT | sed 's=.*/=='); fi
     
-    echo_blue "\nList of projects\n"
+    if [[ ! -z $(ls -A $DIR_PROJECTS) ]]; then echo_blue "\nList of projects\n"; fi
     
     i=1
     for DIR in "$DIR_PROJECTS"/*
@@ -597,7 +600,7 @@ function ssl_certificate_pull {
 }
 
 function environment_setup {
-    if [[ ! -d "$DIR_PROJECT" || ! -h "$DIR_PROJECT" ]]; then echo >&3; echo_red "No config found. Please select a project from the list" >&3; list_projects; exit 1
+    if [[ ! -d "$DIR_PROJECT" || ! -h "$DIR_PROJECT" ]]; then echo >&3; echo_red "No config found !!!" >&3; list_projects; exit 1
         else
             SELECTED_PROJECT=$(ls -l $DIR_PROJECT | sed 's=.*/==')
             if [[ ! -f $DIR_PROJECT/config ]] ; then projects_update; fi
