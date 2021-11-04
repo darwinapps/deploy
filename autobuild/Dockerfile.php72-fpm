@@ -78,6 +78,8 @@ RUN { \
 RUN sed -ri -e "s;listen = .*;listen = 9000;" /etc/php/7.2/fpm/pool.d/www.conf
 RUN sed -ri -e "s;^user = .*;user = mapped;" /etc/php/7.2/fpm/pool.d/www.conf
 RUN sed -ri -e "s;^group = .*;group = mapped;" /etc/php/7.2/fpm/pool.d/www.conf
+RUN sed -ri -e "s;^error_log = .*;error_log = /var/log/php-fpm.log;" /etc/php/7.2/fpm/php-fpm.conf
+RUN sed -ri -e "s;^\;catch_workers_output = .*;catch_workers_output = yes;" /etc/php/7.2/fpm/pool.d/www.conf
 
 RUN phpenmod -v php7.2 -s ALL opcache-recommended && phpenmod -v php7.2 -s ALL mbstring
 
