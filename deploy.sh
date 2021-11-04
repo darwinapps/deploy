@@ -701,6 +701,13 @@ function InitFolderAndFiles {
     if [[ ! -d $DIR_WORK/data/db ]]; then mkdir -p $DIR_WORK/data/db/; fi
     if [[ ! -d $DIR_WORK/log/mysql ]]; then mkdir -p $DIR_WORK/log/mysql; fi
     if [[ ! -d $DIR_WORK/log/apache2 ]]; then mkdir -p $DIR_WORK/log/apache2; fi
+    if [[ ! -d $DIR_WORK/log/php ]]; then mkdir -p $DIR_WORK/log/php; fi
+
+    # error.log might be created as directory if not exists and mounted by docker-compose
+    if [[ ! -f $DIR_WORK/log/php/php-fpm.log ]]; then
+        rm -rf $DIR_WORK/log/php/php-fpm.log
+        touch $DIR_WORK/log/php/php-fpm.log
+    fi
 
     # error.log might be created as directory if not exists and mounted by docker-compose
     if [[ ! -f $DIR_WORK/log/apache2/error.log ]]; then

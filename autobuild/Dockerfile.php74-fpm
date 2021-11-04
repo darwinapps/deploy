@@ -78,6 +78,7 @@ RUN { \
 RUN sed -ri -e "s;listen = .*;listen = 9000;" /etc/php/7.4/fpm/pool.d/www.conf
 RUN sed -ri -e "s;^user = .*;user = mapped;" /etc/php/7.4/fpm/pool.d/www.conf
 RUN sed -ri -e "s;^group = .*;group = mapped;" /etc/php/7.4/fpm/pool.d/www.conf
+RUN sed -ri -e "s;^error_log = .*;error_log = /var/log/php-fpm.log;" /etc/php/7.4/fpm/php-fpm.conf
 
 RUN phpenmod -v php7.4 -s ALL opcache-recommended && phpenmod -v php7.4 -s ALL mbstring
 
