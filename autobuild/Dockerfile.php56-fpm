@@ -75,11 +75,13 @@ RUN { \
     echo 'date.timezone = "UTC"'; \
 } > /etc/php/5.6/fpm/php.ini
 
-RUN sed -ri -e "s;listen = .*;listen = 9000;" /etc/php/5.6/fpm/pool.d/www.conf
-RUN sed -ri -e "s;^user = .*;user = mapped;" /etc/php/5.6/fpm/pool.d/www.conf
-RUN sed -ri -e "s;^group = .*;group = mapped;" /etc/php/5.6/fpm/pool.d/www.conf
-RUN sed -ri -e "s;^error_log = .*;error_log = /var/log/php-fpm.log;" /etc/php/5.6/fpm/php-fpm.conf
-RUN sed -ri -e "s;^\;catch_workers_output = .*;catch_workers_output = yes;" /etc/php/5.6/fpm/pool.d/www.conf
+RUN sed -ri -e "s;listen = .*;listen = 9000;" /etc/php/5.6/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^user = .*;user = mapped;" /etc/php/5.6/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^group = .*;group = mapped;" /etc/php/5.6/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^\;catch_workers_output = .*;catch_workers_output = yes;" /etc/php/5.6/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^\;php_admin_value\[error_log\].*;php_admin_value\[error_log\] = /var/log/fpm-php.www.log;" /etc/php/5.6/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^\;php_admin_flag\[log_errors\].*;php_admin_flag\[log_errors\] = on;" /etc/php/5.6/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^error_log = .*;error_log = /var/log/php-fpm.log;" /etc/php/5.6/fpm/php-fpm.conf
 
 RUN phpenmod -v php5.6 -s ALL opcache-recommended && phpenmod -v php5.6 -s ALL mbstring
 

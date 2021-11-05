@@ -1,4 +1,4 @@
-# IMAGE_TAG php:7.2-fpm
+# IMAGE_TAG php:8.0-fpm
 FROM ubuntu:18.04
 
 ENV TZ=Europe/Minsk
@@ -13,18 +13,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN add-apt-repository -y ppa:ondrej/php
 
 RUN apt-get install -y \
-    php7.2 \
-    php7.2-mysql \
-    php7.2-mysqli \
-    php7.2-pdo \
-    php7.2-gd \
-    php7.2-mbstring \
-    php7.2-imagick \
-    php7.2-dev \
-    php7.2-xml \
-    php7.2-fpm \
-    php7.2-curl \
-    php7.2-zip \
+    php8.0 \
+    php8.0-mysql \
+    php8.0-mysqli \
+    php8.0-pdo \
+    php8.0-gd \
+    php8.0-mbstring \
+    php8.0-imagick \
+    php8.0-dev \
+    php8.0-xml \
+    php8.0-fpm \
+    php8.0-curl \
+    php8.0-zip \
     curl \
     git \
     gzip \
@@ -57,7 +57,7 @@ RUN { \
     echo 'opcache.revalidate_freq=0'; \
     echo 'opcache.fast_shutdown=1'; \
     echo 'opcache.enable_cli=1'; \
-} > /etc/php/7.2/mods-available/opcache-recommended.ini
+} > /etc/php/8.0/mods-available/opcache-recommended.ini
 
 RUN { \
     echo 'memory_limit=2G'; \
@@ -73,16 +73,17 @@ RUN { \
     echo 'log_errors_max_len=0'; \
     echo 'error_log=/dev/stderr'; \
     echo 'date.timezone = "UTC"'; \
-} > /etc/php/7.2/fpm/php.ini
+} > /etc/php/8.0/fpm/php.ini
 
-RUN sed -ri -e "s;listen = .*;listen = 9000;" /etc/php/7.2/fpm/pool.d/www.conf && \
-    sed -ri -e "s;^user = .*;user = mapped;" /etc/php/7.2/fpm/pool.d/www.conf && \
-    sed -ri -e "s;^group = .*;group = mapped;" /etc/php/7.2/fpm/pool.d/www.conf && \
-    sed -ri -e "s;^\;catch_workers_output = .*;catch_workers_output = yes;" /etc/php/7.2/fpm/pool.d/www.conf && \
-    sed -ri -e "s;^\;php_admin_value\[error_log\].*;php_admin_value\[error_log\] = /var/log/fpm-php.www.log;" /etc/php/7.2/fpm/pool.d/www.conf && \
-    sed -ri -e "s;^\;php_admin_flag\[log_errors\].*;php_admin_flag\[log_errors\] = on;" /etc/php/7.2/fpm/pool.d/www.conf && \
-    sed -ri -e "s;^error_log = .*;error_log = /var/log/php-fpm.log;" /etc/php/7.2/fpm/php-fpm.conf
+RUN sed -ri -e "s;listen = .*;listen = 9000;" /etc/php/8.0/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^user = .*;user = mapped;" /etc/php/8.0/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^group = .*;group = mapped;" /etc/php/8.0/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^\;catch_workers_output = .*;catch_workers_output = yes;" /etc/php/8.0/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^\;php_admin_value\[error_log\].*;php_admin_value\[error_log\] = /var/log/fpm-php.www.log;" /etc/php/8.0/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^\;php_admin_flag\[log_errors\].*;php_admin_flag\[log_errors\] = on;" /etc/php/8.0/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^error_log = .*;error_log = /var/log/php-fpm.log;" /etc/php/8.0/fpm/php-fpm.conf
 
-RUN phpenmod -v php7.2 -s ALL opcache-recommended && phpenmod -v php7.2 -s ALL mbstring
 
-RUN ln -s /usr/sbin/php-fpm7.2 /usr/sbin/php-fpm
+RUN phpenmod -v php8.0 -s ALL opcache-recommended && phpenmod -v php8.0 -s ALL mbstring
+
+RUN ln -s /usr/sbin/php-fpm8.0 /usr/sbin/php-fpm
