@@ -710,6 +710,12 @@ function InitFolderAndFiles {
     fi
 
     # error.log might be created as directory if not exists and mounted by docker-compose
+    if [[ ! -f $DIR_WORK/log/php/fpm-php.www.log ]]; then
+        rm -rf $DIR_WORK/log/php/fpm-php.www.log
+        touch $DIR_WORK/log/php/fpm-php.www.log
+    fi
+
+    # error.log might be created as directory if not exists and mounted by docker-compose
     if [[ ! -f $DIR_WORK/log/apache2/error.log ]]; then
         rm -rf $DIR_WORK/log/apache2/error.log
         touch $DIR_WORK/log/apache2/error.log
