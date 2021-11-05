@@ -80,7 +80,7 @@ RUN sed -ri -e "s;listen = .*;listen = 9000;" /etc/php/7.4/fpm/pool.d/www.conf &
     sed -ri -e "s;^group = .*;group = mapped;" /etc/php/7.4/fpm/pool.d/www.conf && \
     sed -ri -e "s;^\;catch_workers_output = .*;catch_workers_output = yes;" /etc/php/7.4/fpm/pool.d/www.conf && \
     sed -ri -e "s;^\;php_admin_value\[error_log\].*;php_admin_value\[error_log\] = /var/log/fpm-php.www.log;" /etc/php/7.4/fpm/pool.d/www.conf && \
-    sed -ri -e "s;^\;php_admin_flag\[log_errors\].*;php_admin_flag\[log_errors\] = on;" /etc/php/7.4/fpm/pool.d/www.conf \
+    sed -ri -e "s;^\;php_admin_flag\[log_errors\].*;php_admin_flag\[log_errors\] = on;" /etc/php/7.4/fpm/pool.d/www.conf && \
     sed -ri -e "s;^error_log = .*;error_log = /var/log/php-fpm.log;" /etc/php/7.4/fpm/php-fpm.conf
 
 
