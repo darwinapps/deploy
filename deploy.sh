@@ -4,7 +4,7 @@ exec 3>&1
 
 # Clearing all these variables occurs because when the script is restarted (self_update), these variables contain data from the first run
 MYSQL_DOCKERFILE=""; MYSQL_BASE_IMAGE=""; MYSQL_PORT=""
-INNODB_LOG_FILE_SIZE=""; APP_TYPE=""; AWS_FILENAME_DB=""
+MYSQL_INNODB_LOG_FILE_SIZE=""; APP_TYPE=""; AWS_FILENAME_DB=""
 APACHE_IMAGE=""
 ###
 
@@ -621,8 +621,8 @@ function environment_setup {
     MYSQL_CONTAINER="$PROJECT-mysql"
     MYSQL_IMAGE=$MYSQL_CONTAINER
     MYSQL_DOCKERFILE=$DIR_DOCKERFILES"/"${MYSQL_DOCKERFILE:-Dockerfile.app.mysql}
-    MYSQL_BASE_IMAGE=${MYSQL_BASE_IMAGE:-mysql:5.6}
-    INNODB_LOG_FILE_SIZE=${INNODB_LOG_FILE_SIZE:-"16M"}
+    MYSQL_BASE_IMAGE=${MYSQL_BASE_IMAGE:-mysql:5.7}
+    MYSQL_INNODB_LOG_FILE_SIZE=${MYSQL_INNODB_LOG_FILE_SIZE:-"16M"}
 
     APACHE_CONTAINER="$PROJECT-apache"
     PHP_FPM_CONTAINER="$PROJECT-php-fpm"
@@ -805,7 +805,7 @@ case $1 in
             
             progress 15 "Docker build MySQL"
             docker --log-level "error" build \
-                --build-arg INNODB_LOG_FILE_SIZE=$INNODB_LOG_FILE_SIZE \
+                --build-arg MYSQL_INNODB_LOG_FILE_SIZE=$MYSQL_INNODB_LOG_FILE_SIZE \
                 --build-arg MYSQL_BASE_IMAGE=$MYSQL_BASE_IMAGE \
                 --build-arg USERID=$USERID \
                 --build-arg GROUPID=$GROUPID \

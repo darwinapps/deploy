@@ -5,7 +5,7 @@ services:
         container_name: $MYSQL_CONTAINER
         image: $MYSQL_IMAGE
         command:
-            - --innodb-log-file-size=$INNODB_LOG_FILE_SIZE
+            - --innodb-log-file-size=$MYSQL_INNODB_LOG_FILE_SIZE
         environment:
             MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
             MYSQL_USER: $MYSQL_USER
