@@ -1,0 +1,7 @@
+ARG REDIS_IMAGE
+FROM $REDIS_IMAGE
+
+# MYSQL_BASE_IMAGE must be declared again after FROM
+ARG REDIS_IMAGE
+
+CMD ["redis-server"]

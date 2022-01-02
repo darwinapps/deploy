@@ -627,11 +627,15 @@ function environment_setup {
     APACHE_CONTAINER="$PROJECT-apache"
     PHP_FPM_CONTAINER="$PROJECT-php-fpm"
     NODE_CONTAINER="$PROJECT-node"
+    REDIS_CONTAINER="$PROJECT-redis"
 
     APACHE_DOCKERFILE=($DIR_DOCKERFILES"/Dockerfile.app.apache")
     PHP_FPM_DOCKERFILE=($DIR_DOCKERFILES"/Dockerfile.app.php-fpm")
     NODE_DOCKERFILE=($DIR_DOCKERFILES"/Dockerfile.app.node")
     
+    REDIS_DOCKERFILE=($DIR_DOCKERFILES"/Dockerfile.app.redis")
+    REDIS_IMAGE=${REDIS_IMAGE:-redis:5}
+
     APP_DOCKERFILES=""
     APP_TYPE=${APP_TYPE:-empty}
 
@@ -651,6 +655,7 @@ function environment_setup {
     if [[ $APACHE_IMAGE ]]; then DOCKER_COMPOSE_ARGS=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-apache.yml"); fi
     if [[ $PHP_FPM_IMAGE ]]; then DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-php-fpm.yml"); fi
     if [[ $NODE_IMAGE ]]; then DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-node.yml"); fi
+    if [[ $REDIS_IMAGE ]]; then DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-redis.yml"); fi
 
     if [[ $MYSQL_DATABASE ]]; then
         DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-mysql.yml")
@@ -669,7 +674,6 @@ function environment_setup {
     MYSQL_PORT=${MYSQL_PORT:-3306}
 
 
-
     if [[ $APACHE_PORT_MAP ]]; then
         DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-apache-ports.yml")
     fi
@@ -685,6 +689,14 @@ function environment_setup {
         DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-node-ports.yml")
     fi
     NODE_PORT=${NODE_PORT:-3000}
+
+    if [[ $REDIS_PORT_MAP ]]; then
+        if [[ ! $REDIS_PORT ]]; then
+            IFS=: read -r REDIS_EXTERNAL_PORT REDIS_PORT <<< "$REDIS_PORT_MAP"
+        fi
+        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-redis-ports.yml")
+    fi
+    REDIS_PORT=${REDIS_PORT:-6379}
 
     if [[ $APP_NETWORK ]]; then
         DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-network.yml")
@@ -885,6 +897,21 @@ case $1 in
                 --build-arg DIR_SCRIPTS=$DIR_SCRIPTS \
                 -f - \
                 -t $NODE_CONTAINER . || exit 1
+            printf "\n"       
+        fi
+
+
+        if [[ $REDIS_IMAGE ]]; then
+            progress 46 "Docker pull Redis"
+            printf "\n\e[1;34m"
+            docker pull ${REDIS_IMAGE}
+            printf "\n\e[0m"
+
+            progress 48 "Docker build Redis"
+            cat ${REDIS_DOCKERFILE} | docker --log-level "error" build \
+                --build-arg REDIS_IMAGE=$REDIS_IMAGE \
+                -f - \
+                -t $REDIS_CONTAINER . || exit 1
             printf "\n"       
         fi
 
