@@ -634,7 +634,6 @@ function environment_setup {
     NODE_DOCKERFILE=($DIR_DOCKERFILES"/Dockerfile.app.node")
     
     REDIS_DOCKERFILE=($DIR_DOCKERFILES"/Dockerfile.app.redis")
-    REDIS_IMAGE=${REDIS_IMAGE:-redis:5}
 
     APP_DOCKERFILES=""
     APP_TYPE=${APP_TYPE:-empty}
