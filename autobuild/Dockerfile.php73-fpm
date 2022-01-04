@@ -25,6 +25,7 @@ RUN apt-get install -y \
     php7.3-fpm \
     php7.3-curl \
     php7.3-zip \
+    php7.3-redis \
     curl \
     git \
     gzip \
