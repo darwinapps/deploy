@@ -1,0 +1,19 @@
+version: '3.1'
+
+services:
+    php-fpm:
+        container_name: $PHP_FPM_CONTAINER
+        image: $PHP_FPM_CONTAINER
+        volumes:
+            - "${DIR_WEB}/:/var/www/html/:delegated"
+            - "${DIR_PROJECT}/config:/tmp/config:delegated"
+            - "${DIR_WORK}/log/php/php-fpm.log:/var/log/php-fpm.log:delegated"
+            - "${DIR_WORK}/log/php/fpm-php.www.log:/var/log/fpm-php.www.log:delegated"
+
+        environment:
+            DOCKERIZED: 1
+            WEB_DOCUMENT_ROOT: $WEB_DOCUMENT_ROOT
+            WEB_ROOT: $WEB_ROOT
+            WORDPRESS_TABLE_PREFIX: $WORDPRESS_TABLE_PREFIX
+            LANG: C.UTF-8
+            DEBUG: $DEBUG

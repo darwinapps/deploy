@@ -1,7 +1,7 @@
-/backup/
-/data/
-/log/
-/mysql-init-script/
-/remote-files/
+/workroot/*
+!/workroot/.gitkeep
+/units/config.global
+/units/ssl/
 /webroot/
+/projects/
 /config

@@ -1,0 +1,6 @@
+version: '3.1'
+
+services:
+    redis:
+        ports:
+            - $REDIS_PORT_MAP

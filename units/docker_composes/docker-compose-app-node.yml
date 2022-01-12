@@ -1,0 +1,14 @@
+version: '3.1'
+
+services:
+    node:
+        container_name: $NODE_CONTAINER
+        image: $NODE_CONTAINER
+        volumes:
+            - "${DIR_WEB}/:/var/www/html/:delegated"
+            - "${DIR_PROJECT}/config:/tmp/config:delegated"
+        environment:
+            DOCKERIZED: 1
+            WEB_ROOT: $WEB_ROOT
+            LANG: C.UTF-8
+            DEBUG: $DEBUG

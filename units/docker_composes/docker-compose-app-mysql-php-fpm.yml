@@ -1,0 +1,10 @@
+version: '3.1'
+
+services:
+    php-fpm:
+        environment:
+            MYSQL_PASSWORD: $MYSQL_PASSWORD
+            MYSQL_USER: $MYSQL_USER
+            MYSQL_DATABASE: $MYSQL_DATABASE
+            MYSQL_HOST: $MYSQL_CONTAINER
+            MYSQL_PORT: $MYSQL_PORT

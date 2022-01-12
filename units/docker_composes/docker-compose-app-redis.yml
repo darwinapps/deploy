@@ -1,0 +1,11 @@
+version: '3.1'
+
+services:
+    redis:
+        container_name: $REDIS_CONTAINER
+        image: $REDIS_CONTAINER
+        volumes:
+            - "${DIR_WEB}/:/var/www/html/:delegated"
+            - "${DIR_PROJECT}/config:/tmp/config:delegated"
+        environment:
+            WEB_ROOT: $WEB_ROOT

@@ -1,0 +1,18 @@
+version: '3.1'
+
+services:
+    mysql:
+        container_name: $MYSQL_CONTAINER
+        image: $MYSQL_IMAGE
+        command:
+            - --innodb-log-file-size=$MYSQL_INNODB_LOG_FILE_SIZE
+        environment:
+            MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+            MYSQL_USER: $MYSQL_USER
+            MYSQL_PASSWORD: $MYSQL_PASSWORD
+            MYSQL_DATABASE: $MYSQL_DATABASE
+            LANG: C.UTF-8
+        volumes:
+            - "${DIR_WORK}/data/db/mysql:/var/lib/mysql:delegated"
+            - "${DIR_WORK}/mysql-init-script:/docker-entrypoint-initdb.d:delegated"
+            - "${DIR_WORK}/log/mysql/:/var/log/mysql/:delegated"

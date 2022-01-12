@@ -1,0 +1,160 @@
+ARG APP_BASE_IMAGE
+FROM $APP_BASE_IMAGE
+
+# APP_BASE_IMAGE must be declared again after FROM
+ARG APP_BASE_IMAGE
+
+ARG PHP_SHORT_OPEN_TAG
+ARG VERS_COMPOSER
+ARG MAILGUN_USER
+ARG MAILGUN_PASSWORD
+
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends apt-transport-https apt-utils gnupg
+RUN apt-get install -y --no-install-recommends \
+    less \
+    libwebp-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libfreetype6-dev \
+    libgeoip-dev \
+    libmcrypt-dev \
+    libzip-dev \
+    git \
+    tcpdump \
+    telnet \
+    net-tools \
+    nano \
+    zip \
+    gzip \
+    unzip \
+    wget \
+    ssh \
+    imagemagick \
+    libmagickwand-dev \
+    msmtp-mta
+
+RUN apt-get install -y --no-install-recommends mysql-client || apt-get install -y --no-install-recommends default-mysql-client
+
+# NATIVE
+RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr --with-freetype-dir=/usr --with-webp-dir=/usr
+RUN docker-php-ext-configure soap
+RUN docker-php-ext-install -j$(nproc) gd mysqli pdo_mysql opcache zip soap
+
+RUN \
+    if echo "${APP_BASE_IMAGE}" | egrep -q ^php:7.2-apache; \
+    then \
+        pecl install channel://pecl.php.net/mcrypt-1.0.1; \
+        docker-php-ext-enable mcrypt; \
+        pecl install imagick; \
+        docker-php-ext-enable imagick; \
+    else if echo "${APP_BASE_IMAGE}" | egrep -q ^php:7.3-apache$; \
+        then \
+            pecl install channel://pecl.php.net/mcrypt-1.0.2; \
+            docker-php-ext-enable mcrypt; \
+            pecl install imagick; \
+            docker-php-ext-enable imagick; \
+        else \
+            docker-php-ext-configure mcrypt; \
+            docker-php-ext-install -j$(nproc) mcrypt; \
+        fi \
+    fi
+
+
+# RUNKIT
+RUN curl -sL https://github.com/runkit7/runkit7/releases/download/1.0.9/runkit-1.0.9.tgz > /tmp/runkit-1.0.9.tgz
+
+# PECL
+RUN pecl install geoip-1.1.1 xdebug /tmp/runkit-1.0.9.tgz
+RUN docker-php-ext-enable geoip
+
+
+RUN { \
+    echo 'opcache.memory_consumption=128'; \
+    echo 'opcache.interned_strings_buffer=8'; \
+    echo 'opcache.max_accelerated_files=4000'; \
+    echo 'opcache.revalidate_freq=0'; \
+    echo 'opcache.fast_shutdown=1'; \
+    echo 'opcache.enable_cli=1'; \
+} > /usr/local/etc/php/conf.d/opcache-recommended.ini
+
+RUN { \
+    echo "short_open_tag=${PHP_SHORT_OPEN_TAG}"; \
+    echo 'memory_limit=2G'; \
+    echo 'post_max_size=6152M'; \
+    echo 'upload_max_filesize=6144M'; \
+    echo 'max_execution_time=3600'; \
+    echo 'max_input_vars = 50000'; \
+    echo 'max_input_time=3600'; \
+    echo 'error_reporting=E_ALL'; \
+    echo 'display_errors=On'; \
+    echo 'display_startup_errors=On'; \
+    echo 'log_errors=On'; \
+    echo 'log_errors_max_len=0'; \
+    echo 'error_log=/dev/stderr'; \
+    echo 'date.timezone = "UTC"'; \
+} > /usr/local/etc/php/conf.d/php.ini
+
+RUN if [ -n "${MAILGUN_USER}" ] ; then \
+    { \
+    echo 'sendmail_path = "/usr/bin/msmtp -t"'; \
+} >> /usr/local/etc/php/conf.d/php.ini; fi
+
+RUN if [ -n "${MAILGUN_USER}" ] ; then \
+    { \
+    echo "defaults" ; \
+    echo "port 587" ; \
+    echo "tls on" ; \
+    echo "tls_trust_file /etc/ssl/certs/ca-certificates.crt" ; \
+    echo "account mailgun" ; \
+    echo "host smtp.mailgun.org" ; \
+    echo "from $MAILGUN_USER" ; \
+    echo "auth on" ; \
+    echo "user $MAILGUN_USER" ; \
+    echo "password $MAILGUN_PASSWORD" ; \
+    echo "account default : mailgun" ; \
+} > /etc/msmtprc; fi
+
+RUN a2enmod rewrite expires
+COPY ${DIR_UNITS}/geoip/GeoLiteCity.dat.gz /tmp/
+RUN mkdir -p /usr/share/GeoIP/ && gunzip -c /tmp/GeoLiteCity.dat.gz > /usr/share/GeoIP/GeoIPCity.dat && rm /tmp/GeoLiteCity.dat.gz
+#&& curl -sL --output - https://github.com/darwinapps/deploy/raw/master/geoip/GeoLiteCity.dat.gz | gunzip - > /usr/share/GeoIP/GeoIPCity.dat
+
+# RUN (cd ~/ && (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer))
+
+RUN (cd ~/ && (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer --version=$VERS_COMPOSER))
+
+# --- fixing user permissions
+
+ARG USERID
+ARG GROUPID
+
+RUN groupadd -g $GROUPID mapped || groupmod -n mapped $(getent group $GROUPID | cut -d: -f1)
+RUN useradd \
+      --uid $USERID \
+      --gid $GROUPID \
+      --home-dir /var/www/html/ \
+      mapped
+
+# -- end fixing user permissions
+
+# --- app-type related code
+
+ARG APP_TYPE
+COPY scripts/${APP_TYPE}/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
+
+# -- end app-type related code
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["apache2-foreground"]
+
+ENV APACHE_RUN_USER mapped
+ENV APACHE_RUN_GROUP mapped
+
+ARG PROJECT
+ARG WEB_DOCUMENT_ROOT
+
+RUN sed -ri -e "s!#ServerName .*!ServerName $PROJECT!" /etc/apache2/sites-enabled/000-default.conf
+RUN sed -ri -e "s!/var/www/html!${WEB_DOCUMENT_ROOT}!g" /etc/apache2/apache2.conf /etc/apache2/sites-enabled/*.conf

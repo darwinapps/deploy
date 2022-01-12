@@ -1,0 +1,32 @@
+ARG MYSQL_BASE_IMAGE
+FROM $MYSQL_BASE_IMAGE
+
+# MYSQL_BASE_IMAGE must be declared again after FROM
+ARG MYSQL_BASE_IMAGE
+
+ARG MYSQL_INNODB_LOG_FILE_SIZE
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN { \
+    echo "[mysqld]"; \
+    echo "innodb_use_native_aio=0"; \
+    echo "max_allowed_packet=512M"; \
+    echo "innodb_log_file_size=$MYSQL_INNODB_LOG_FILE_SIZE"; \
+    echo "slow_query_log=1"; \
+    echo "slow_query_log_file=/var/log/mysql/slow.log"; \
+    echo "long_query_time=0.1"; \
+} > /etc/mysql/conf.d/mysql_project.cnf
+
+# --- fixing user permissions
+
+ARG USERID
+ARG GROUPID
+
+RUN userdel mysql
+
+RUN bash -c 'if [[ $(getent group $GROUPID | cut -d: -f1) == "" ]]; then groupadd -g $GROUPID mysql; else groupmod --new-name mysql $(getent group $GROUPID | cut -d: -f1); fi'
+RUN bash -c 'if [[ $(id -u mysql 2>/dev/null) == "" ]]; then useradd -r -g mysql -u $USERID mysql; else usermod -u $USERID mysql; fi'
+
+RUN if [ ! -d /var/log/mysql ]; then mkdir -p /var/log/mysql; fi
+RUN chown -R mysql:mysql /var/lib/mysql /var/run/mysqld /var/log/mysql
