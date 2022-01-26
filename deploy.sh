@@ -616,6 +616,10 @@ function environment_setup {
     [[ -z "${WORDPRESS_TABLE_PREFIX}" ]] && WORDPRESS_TABLE_PREFIX=""
     [[ -z "${PHP_SHORT_OPEN_TAG}" ]] && PHP_SHORT_OPEN_TAG="Off"
 
+    # For support Apple m1
+    if [[ $(uname -m) == "arm64" ]]; then
+        export DOCKER_DEFAULT_PLATFORM=linux/amd64
+    fi
 
 
     MYSQL_CONTAINER="$PROJECT-mysql"
