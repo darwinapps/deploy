@@ -621,11 +621,6 @@ function environment_setup {
         export DOCKER_DEFAULT_PLATFORM=linux/amd64
     fi
 
-    if [[ $(uname -m) == "aarch64" ]]; then
-        export DOCKER_DEFAULT_PLATFORM=linux/amd64
-    fi
-
-
     MYSQL_CONTAINER="$PROJECT-mysql"
     MYSQL_IMAGE=$MYSQL_CONTAINER
     MYSQL_DOCKERFILE=$DIR_DOCKERFILES"/"${MYSQL_DOCKERFILE:-Dockerfile.app.mysql}
