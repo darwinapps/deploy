@@ -54,8 +54,10 @@ function projects_update {
 
         if [[ ! -d ./.git ]]; then
             git clone $REPOSITORY_PROJECTS .
+            git submodule update --init --recursive &> /dev/null
         else
             git fetch
+            git submodule update --init --recursive &> /dev/null
             if [[ -n $(git diff --name-only origin/master) ]]; then
                 echo_blue "\nFound a new versions configuration files of projects..."
                 git reset --hard origin/master
@@ -578,6 +580,16 @@ function select_project {
         fi
     fi
     ###
+
+    if [[ -d "$DIR/.git" ]]; then git --git-dir=$DIR/.git --work-tree=$DIR checkout master; fi
+
+    if [[ -f $DIR/deploy-config.md ]]; then
+        if [[ -f "$DIR/config" && -h "$DIR/config" ]]; then
+            rm -f $DIR/config;
+        fi
+
+        ln -s ./deploy-config.md $DIR/config
+    fi
 
     if [[ -f $DIR/config ]]; then
         rm -rf $DIR_PROJECT
