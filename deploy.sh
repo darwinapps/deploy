@@ -581,7 +581,7 @@ function select_project {
     fi
     ###
 
-    if [[ -d "$DIR/.git" ]]; then git --git-dir=$DIR/.git --work-tree=$DIR checkout master; fi
+    if [[ -f "$DIR/.git" ]]; then git --git-dir=$DIR/.git --work-tree=$DIR checkout master; fi
 
     if [[ -f $DIR/deploy-config.md ]]; then
         if [[ -f "$DIR/config" && -h "$DIR/config" ]]; then
