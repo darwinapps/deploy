@@ -581,12 +581,20 @@ function select_project {
     fi
     ###
 
-    if [[ -f "$DIR/.git" ]]; then git --git-dir=$DIR/.git --work-tree=$DIR checkout master; fi
+    if [[ -f "$DIR/.git" ]]; then
+        git --git-dir=$DIR/.git --work-tree=$DIR checkout master
+        if [[ -n $(git --git-dir=$DIR/.git --work-tree=$DIR diff --name-only origin/master) ]]; then
+            echo_blue "\nFound a new version configuration file of project $SELECTED_PROJECT"
+            git --git-dir=$DIR/.git --work-tree=$DIR reset --hard origin/master
+        fi
+    fi
 
     if [[ -f $DIR/deploy-config.md ]]; then
         if [[ -f "$DIR/config" && -h "$DIR/config" ]]; then
             rm -f $DIR/config;
         fi
+
+        sed -i '1,$ s/```//' $DIR/deploy-config.md > /dev/null 2>&1
 
         ln -s ./deploy-config.md $DIR/config
     fi
@@ -615,7 +623,7 @@ function environment_setup {
     if [[ ! -d "$DIR_PROJECT" || ! -h "$DIR_PROJECT" ]]; then echo >&3; echo_red "No config found !!!" >&3; list_projects; exit 1
         else
             SELECTED_PROJECT=$(ls -l $DIR_PROJECT | sed 's=.*/==')
-            if [[ ! -f $DIR_PROJECT/config ]] ; then projects_update; fi
+            if [[ ! -f $DIR_PROJECT/config ]] ; then select_project prepare $SELECTED_PROJECT; fi
     fi
 
 
