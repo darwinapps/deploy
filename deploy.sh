@@ -43,6 +43,20 @@ function self_update {
     fi
 }
 
+function projects_configs_update {
+    local WORKDIR=${PWD}
+    cd $DIR_PROJECTS
+    
+    for GIT_MODUL in $(cat .gitmodules | grep path | sed 's!^.*path\s=\s!!g'); do
+        git submodule init $GIT_MODUL > /dev/null 2>&1
+        git submodule update $GIT_MODUL > /dev/null 2>&1 &
+    done
+    wait
+
+    cd $WORKDIR
+}
+
+
 function projects_update {
     if [[ ! -d "$DIR_PROJECTS" ]]; then mkdir $DIR_PROJECTS; fi
     if ! (git ls-remote $REPOSITORY_PROJECTS &> /dev/null); then
@@ -53,11 +67,11 @@ function projects_update {
         cd $DIR_PROJECTS
 
         if [[ ! -d ./.git ]]; then
-            git clone $REPOSITORY_PROJECTS .
-            git submodule update --init --recursive &> /dev/null
+            git clone --quiet $REPOSITORY_PROJECTS .
+            # git clone --quiet --recurse-submodules -j16 $REPOSITORY_PROJECTS .
         else
             git fetch
-            git submodule update --init --recursive &> /dev/null
+            # git submodule update --init --recursive
             if [[ -n $(git diff --name-only origin/master) ]]; then
                 echo_blue "\nFound a new versions configuration files of projects..."
                 git reset --hard origin/master
@@ -75,6 +89,7 @@ function projects_update {
         fi
     fi
     ###
+    projects_configs_update
 }
 
 function echo_green { printf "\e[1;32m${1}\n\e[0m"; }
@@ -535,11 +550,11 @@ function list_projects {
     if [[ -d "$DIR_PROJECT" && -h "$DIR_PROJECT" ]]; then SELECTED_PROJECT=$(ls -l $DIR_PROJECT | sed 's=.*/=='); fi
     
     if [[ ! -z $(ls -A $DIR_PROJECTS) ]]; then echo_blue "\nList of projects\n"; fi
-    
+
     i=1
     for DIR in "$DIR_PROJECTS"/*
     do
-        if [ -e "$DIR" ]; then
+        if [ -e "$DIR/deploy-config.md" ] || [ -e "$DIR/config" ]; then
             DIRNAME=$(echo $DIR | sed 's=.*/==')
             if [[ $DIRNAME != $SELECTED_PROJECT ]]; then echo $i.' '$DIRNAME
                                                     else echo_green $i.' '$DIRNAME'        <-- selected project'
