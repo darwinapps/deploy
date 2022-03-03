@@ -625,7 +625,8 @@ function select_project {
             rm -f $DIR/config;
         fi
 
-        sed -i '1,$ s/```//' $DIR/deploy-config.md > /dev/null 2>&1
+        # sed -i '1,$ s/```//' $DIR/deploy-config.md > /dev/null 2>&1
+        sed -i 's/```//' $DIR/deploy-config.md > /dev/null 2>&1
 
         ln -s ./deploy-config.md $DIR/config
     fi
