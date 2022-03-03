@@ -43,15 +43,23 @@ function self_update {
     fi
 }
 
+function project_git_submodule_update {
+    if ! (git submodule update $GIT_MODUL); then git submodule deinit $GIT_MODUL; fi
+    echo -ne "." >&3
+}
+
 function projects_configs_update {
+    echo -ne "\nThe list of projects is being updated " >&3
     local WORKDIR=${PWD}
     cd $DIR_PROJECTS
-    
+
     for GIT_MODUL in $(cat .gitmodules | grep path | sed 's!^.*path\s=\s!!g'); do
         git submodule init $GIT_MODUL > /dev/null 2>&1
-        git submodule update $GIT_MODUL > /dev/null 2>&1 &
+        project_git_submodule_update > /dev/null 2>&1 &
     done
     wait
+
+    echo
 
     cd $WORKDIR
 }
@@ -59,27 +67,23 @@ function projects_configs_update {
 
 function projects_update {
     if [[ ! -d "$DIR_PROJECTS" ]]; then mkdir $DIR_PROJECTS; fi
-    if ! (git ls-remote $REPOSITORY_PROJECTS &> /dev/null); then
-        echo_red "\nPossible, you not have access to the git repository with configuration files of projects\n"
-    else
 
-        local WORKDIR=${PWD}
-        cd $DIR_PROJECTS
+    local WORKDIR=${PWD}
+    cd $DIR_PROJECTS
 
-        if [[ ! -d ./.git ]]; then
-            git clone --quiet $REPOSITORY_PROJECTS .
-            # git clone --quiet --recurse-submodules -j16 $REPOSITORY_PROJECTS .
-        else
-            git fetch
-            # git submodule update --init --recursive
-            if [[ -n $(git diff --name-only origin/master) ]]; then
-                echo_blue "\nFound a new versions configuration files of projects..."
-                git reset --hard origin/master
-            fi
+    if [[ ! -d ./.git ]]; then
+        if ! (git clone $REPOSITORY_PROJECTS . > /dev/null 2>&1 ); then
+            echo_red "\nPossible, you not have access to the git repository with configuration files of projects\n"
         fi
-    
-        cd $WORKDIR
+    else
+        git fetch
+        if [[ -n $(git diff --name-only origin/master) ]]; then
+            echo_blue "\nFound a new versions configuration files of projects..."
+            git reset --hard origin/master
+        fi
     fi
+
+    cd $WORKDIR
 
     # Search for the config in the root of the program and add it to the list of configs
     if [[ -f ./config ]]; then
@@ -89,7 +93,8 @@ function projects_update {
         fi
     fi
     ###
-    projects_configs_update
+
+    if [[ -f $DIR_PROJECTS/.gitmodules ]]; then projects_configs_update; fi
 }
 
 function echo_green { printf "\e[1;32m${1}\n\e[0m"; }
@@ -548,8 +553,10 @@ function list_projects {
     projects_update
 
     if [[ -d "$DIR_PROJECT" && -h "$DIR_PROJECT" ]]; then SELECTED_PROJECT=$(ls -l $DIR_PROJECT | sed 's=.*/=='); fi
-    
-    if [[ ! -z $(ls -A $DIR_PROJECTS) ]]; then echo_blue "\nList of projects\n"; fi
+
+    local FILES_PROJECTS=$(find $DIR_PROJECTS -type f -name "deploy-config.md" -or -name "config" -not -path "*.git/*")
+
+    if [[ ! -z $FILES_PROJECTS ]]; then echo_blue "\nList of projects\n"; fi
 
     i=1
     for DIR in "$DIR_PROJECTS"/*
@@ -563,6 +570,15 @@ function list_projects {
         fi
     done
     echo
+
+    if [[ ! -z $FILES_PROJECTS ]]; then
+        echo_blue "Make a choice and run "
+        echo "     ./deploy.sh -v prepare NAME_PROJECT"
+        echo "or"
+        echo "     ./deploy.sh -v prepare NUMBER_PROJECT"
+        echo
+    else echo_red "There are no configuration files available. Please create a configuration file in the root directory or contact support.\n"
+    fi
 } >&3
 
 function realclean {
