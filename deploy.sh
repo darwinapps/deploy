@@ -611,7 +611,7 @@ function select_project {
     i=1
     for DIR in "$DIR_PROJECTS"/*
     do
-        if [ -e "$DIR" ]; then
+        if [ -e "$DIR/deploy-config.md" ] || [ -e "$DIR/config" ]; then
             DIRNAME=$(echo $DIR | sed 's=.*/==')
             if [[ $2 == $i || $2 == $DIRNAME ]]; then break; fi;
             (( i++ ))
