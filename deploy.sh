@@ -64,6 +64,26 @@ function projects_configs_update {
     cd $WORKDIR
 }
 
+function project_update {
+    if [[ -f "$1/.git" ]]; then
+        git --git-dir=$1/.git --work-tree=$1 checkout master > /dev/null 2>&1
+        if [[ -n $(git --git-dir=$1/.git --work-tree=$1 diff --name-only origin/master) ]]; then
+            echo_blue "\nFound a new version configuration file of project $SELECTED_PROJECT"
+            git --git-dir=$1/.git --work-tree=$1 reset --hard origin/master
+        fi
+    fi
+
+    if [[ -f $1/deploy-config.md ]]; then
+        if [[ -f "$1/config" && -h "$1/config" ]]; then
+            rm -f $1/config;
+        fi
+
+        sed '1,$ s/```//' $1/deploy-config.md > $1/config
+
+        # sed -i '1,$ s/```//' $1/deploy-config.md > /dev/null 2>&1
+        # ln -s ./deploy-config.md $1/config
+    fi
+}
 
 function projects_update {
     if [[ ! -d "$DIR_PROJECTS" ]]; then mkdir $DIR_PROJECTS; fi
@@ -612,24 +632,7 @@ function select_project {
     fi
     ###
 
-    if [[ -f "$DIR/.git" ]]; then
-        git --git-dir=$DIR/.git --work-tree=$DIR checkout master
-        if [[ -n $(git --git-dir=$DIR/.git --work-tree=$DIR diff --name-only origin/master) ]]; then
-            echo_blue "\nFound a new version configuration file of project $SELECTED_PROJECT"
-            git --git-dir=$DIR/.git --work-tree=$DIR reset --hard origin/master
-        fi
-    fi
-
-    if [[ -f $DIR/deploy-config.md ]]; then
-        if [[ -f "$DIR/config" && -h "$DIR/config" ]]; then
-            rm -f $DIR/config;
-        fi
-
-        sed '1,$ s/```//' $DIR/deploy-config.md > $DIR/config
-
-        # sed -i '1,$ s/```//' $DIR/deploy-config.md > /dev/null 2>&1
-        # ln -s ./deploy-config.md $DIR/config
-    fi
+    project_update $DIR
 
     if [[ -f $DIR/config ]]; then
         rm -rf $DIR_PROJECT
@@ -831,6 +834,7 @@ case $1 in
             if [[ -f ./config ]]; then select_project $1 "MyConfig"
             else
                 projects_update
+                project_update $DIR_PROJECT
             fi
         fi
 
