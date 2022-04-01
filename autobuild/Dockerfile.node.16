@@ -16,3 +16,5 @@ RUN apt-get install -y \
         nodejs \
         yarn \
         gulp
+
+RUN npm update npm -g
