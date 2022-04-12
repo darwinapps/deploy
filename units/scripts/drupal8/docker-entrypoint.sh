@@ -15,9 +15,9 @@ if [[ "$1" == apache2* ]] || [[ "$1" == php-fpm* ]]; then
 		group="$(id -g)"
 	fi
 
-	settingsf="${WEB_DOCUMENT_ROOT}sites/default/settings.php";
+	settingsf="${WEB_DOCUMENT_ROOT}/sites/default/settings.php";
 	if [ ! -f $settingsf ]; then
-		cp -a ${WEB_DOCUMENT_ROOT}sites/default/default.settings.php $settingsf
+		cp -a ${WEB_DOCUMENT_ROOT}/sites/default/default.settings.php $settingsf
 		if [ ! -z "${DEBUG:-}" ]; then
 			echo -e "\$conf['theme_debug'] = TRUE;\n" >> $settingsf
 		fi
