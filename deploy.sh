@@ -43,27 +43,67 @@ function self_update {
     fi
 }
 
+function project_git_submodule_update {
+    if ! (git submodule update $GIT_MODUL); then git submodule deinit $GIT_MODUL; fi
+    echo -ne "." >&3
+}
+
+function projects_configs_update {
+    echo -ne "\nThe list of projects is being updated " >&3
+    local WORKDIR=${PWD}
+    cd $DIR_PROJECTS
+
+    for GIT_MODUL in $(cat .gitmodules | grep path | sed 's!^.*path\s=\s!!g'); do
+        git submodule init $GIT_MODUL > /dev/null 2>&1
+        project_git_submodule_update > /dev/null 2>&1 &
+    done
+    wait
+
+    echo
+
+    cd $WORKDIR
+}
+
+function project_update {
+    if [[ -f "$1/.git" ]]; then
+        git --git-dir=$1/.git --work-tree=$1 checkout master > /dev/null 2>&1
+        if [[ -n $(git --git-dir=$1/.git --work-tree=$1 diff --name-only origin/master) ]]; then
+            echo_blue "\nFound a new version configuration file of project $SELECTED_PROJECT"
+            git --git-dir=$1/.git --work-tree=$1 reset --hard origin/master
+        fi
+    fi
+
+    if [[ -f $1/deploy-config.md ]]; then
+        if [[ -f "$1/config" && -h "$1/config" ]]; then
+            rm -f $1/config;
+        fi
+
+        sed '1,$ s/```//' $1/deploy-config.md > $1/config
+
+        # sed -i '1,$ s/```//' $1/deploy-config.md > /dev/null 2>&1
+        # ln -s ./deploy-config.md $1/config
+    fi
+}
+
 function projects_update {
     if [[ ! -d "$DIR_PROJECTS" ]]; then mkdir $DIR_PROJECTS; fi
-    if ! (git ls-remote $REPOSITORY_PROJECTS &> /dev/null); then
-        echo_red "\nPossible, you not have access to the git repository with configuration files of projects\n"
-    else
 
-        local WORKDIR=${PWD}
-        cd $DIR_PROJECTS
+    local WORKDIR=${PWD}
+    cd $DIR_PROJECTS
 
-        if [[ ! -d ./.git ]]; then
-            git clone $REPOSITORY_PROJECTS .
-        else
-            git fetch
-            if [[ -n $(git diff --name-only origin/master) ]]; then
-                echo_blue "\nFound a new versions configuration files of projects..."
-                git reset --hard origin/master
-            fi
+    if [[ ! -d ./.git ]]; then
+        if ! (git clone $REPOSITORY_PROJECTS . > /dev/null 2>&1 ); then
+            echo_red "\nPossible, you not have access to the git repository with configuration files of projects\n"
         fi
-    
-        cd $WORKDIR
+    else
+        git fetch
+        if [[ -n $(git diff --name-only origin/master) ]]; then
+            echo_blue "\nFound a new versions configuration files of projects..."
+            git reset --hard origin/master
+        fi
     fi
+
+    cd $WORKDIR
 
     # Search for the config in the root of the program and add it to the list of configs
     if [[ -f ./config ]]; then
@@ -73,6 +113,8 @@ function projects_update {
         fi
     fi
     ###
+
+    if [[ -f $DIR_PROJECTS/.gitmodules ]]; then projects_configs_update; fi
 }
 
 function echo_green { printf "\e[1;32m${1}\n\e[0m"; }
@@ -531,13 +573,15 @@ function list_projects {
     projects_update
 
     if [[ -d "$DIR_PROJECT" && -h "$DIR_PROJECT" ]]; then SELECTED_PROJECT=$(ls -l $DIR_PROJECT | sed 's=.*/=='); fi
-    
-    if [[ ! -z $(ls -A $DIR_PROJECTS) ]]; then echo_blue "\nList of projects\n"; fi
-    
+
+    local FILES_PROJECTS=$(find $DIR_PROJECTS -type f -name "deploy-config.md" -or -name "config" -not -path "*.git/*")
+
+    if [[ ! -z $FILES_PROJECTS ]]; then echo_blue "\nList of projects\n"; fi
+
     i=1
     for DIR in "$DIR_PROJECTS"/*
     do
-        if [ -e "$DIR" ]; then
+        if [ -e "$DIR/deploy-config.md" ] || [ -e "$DIR/config" ]; then
             DIRNAME=$(echo $DIR | sed 's=.*/==')
             if [[ $DIRNAME != $SELECTED_PROJECT ]]; then echo $i.' '$DIRNAME
                                                     else echo_green $i.' '$DIRNAME'        <-- selected project'
@@ -546,6 +590,15 @@ function list_projects {
         fi
     done
     echo
+
+    if [[ ! -z $FILES_PROJECTS ]]; then
+        echo_blue "Make a choice and run "
+        echo "     ./deploy.sh -v prepare NAME_PROJECT"
+        echo "or"
+        echo "     ./deploy.sh -v prepare NUMBER_PROJECT"
+        echo
+    else echo_red "There are no configuration files available. Please create a configuration file in the root directory or contact support.\n"
+    fi
 } >&3
 
 function realclean {
@@ -558,7 +611,7 @@ function select_project {
     i=1
     for DIR in "$DIR_PROJECTS"/*
     do
-        if [ -e "$DIR" ]; then
+        if [ -e "$DIR/deploy-config.md" ] || [ -e "$DIR/config" ]; then
             DIRNAME=$(echo $DIR | sed 's=.*/==')
             if [[ $2 == $i || $2 == $DIRNAME ]]; then break; fi;
             (( i++ ))
@@ -578,6 +631,8 @@ function select_project {
         fi
     fi
     ###
+
+    project_update $DIR
 
     if [[ -f $DIR/config ]]; then
         rm -rf $DIR_PROJECT
@@ -603,7 +658,7 @@ function environment_setup {
     if [[ ! -d "$DIR_PROJECT" || ! -h "$DIR_PROJECT" ]]; then echo >&3; echo_red "No config found !!!" >&3; list_projects; exit 1
         else
             SELECTED_PROJECT=$(ls -l $DIR_PROJECT | sed 's=.*/==')
-            if [[ ! -f $DIR_PROJECT/config ]] ; then projects_update; fi
+            if [[ ! -f $DIR_PROJECT/config ]] ; then select_project prepare $SELECTED_PROJECT; fi
     fi
 
 
@@ -616,7 +671,10 @@ function environment_setup {
     [[ -z "${WORDPRESS_TABLE_PREFIX}" ]] && WORDPRESS_TABLE_PREFIX=""
     [[ -z "${PHP_SHORT_OPEN_TAG}" ]] && PHP_SHORT_OPEN_TAG="Off"
 
-
+    # For support Apple m1
+    if [[ $(uname -m) == "arm64" ]]; then
+        export DOCKER_DEFAULT_PLATFORM=linux/amd64
+    fi
 
     MYSQL_CONTAINER="$PROJECT-mysql"
     MYSQL_IMAGE=$MYSQL_CONTAINER
@@ -776,6 +834,7 @@ case $1 in
             if [[ -f ./config ]]; then select_project $1 "MyConfig"
             else
                 projects_update
+                project_update $DIR_PROJECT
             fi
         fi
 

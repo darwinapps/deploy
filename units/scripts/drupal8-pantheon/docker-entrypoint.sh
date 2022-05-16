@@ -11,9 +11,9 @@ if [[ "$1" == apache2* ]] || [[ "$1" == php-fpm* ]]; then
 		group="$(id -g)"
 	fi
 
-	settingsf="${WEB_DOCUMENT_ROOT}sites/default/settings.local.php";
+	settingsf="${WEB_DOCUMENT_ROOT}/sites/default/settings.local.php";
 	if [ ! -f $settingsf ]; then
-		cp -a ${WEB_DOCUMENT_ROOT}sites/example.settings.local.php $settingsf
+		cp -a ${WEB_DOCUMENT_ROOT}/sites/example.settings.local.php $settingsf
 		echo -e "\$databases['default']['default'] = array(\n" \
 			"  'driver' => 'mysql',\n" \
 			"  'database' => '${MYSQL_DATABASE}',\n" \

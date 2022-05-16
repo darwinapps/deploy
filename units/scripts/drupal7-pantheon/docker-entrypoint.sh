@@ -19,7 +19,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		group="$(id -g)"
 	fi
 
-	settingsf="/var/www/html/sites/default/local.settings.php";
+	settingsf="${WEB_DOCUMENT_ROOT}/sites/default/local.settings.php";
 	if [ ! -f $settingsf ]; then
 		echo -e "<?php\n" > $settingsf;
 		if [ ! -z "${DEBUG:-}" ]; then
