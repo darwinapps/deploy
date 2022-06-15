@@ -367,6 +367,8 @@ function get_latest_db_dump_generic_ssh {
     IFS=/ read -r HOSTPORT JUNK<<< "$HOSTPORTPATH"
     IFS=: read -r HOST PORT <<< "${HOSTPORT}"
 
+    if [[ -z ${PORT} ]]; then PORT=22; fi
+
     # username:password@hostname:port/database
     IFS=@ read -r _MYSQL_USERNAMEPASSWORD _MYSQL_HOSTPORTPATH <<< "${REMOTE_MYSQL}"
     IFS=: read -r _MYSQL_USERNAME _MYSQL_PASSWORD <<< "${_MYSQL_USERNAMEPASSWORD}"
