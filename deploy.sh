@@ -995,13 +995,21 @@ case $1 in
         fi
 
         if [[ $(declare -F postinstall) ]]; then
-            echo_green "running postinstall function";
-            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} -f ${DIR_DOCKERCOMPOSES}/docker-compose-app-user.yml \
-                run --no-deps --rm php-fpm \
-                    bash -c "source /tmp/config && HOME=/tmp && cd /var/www/html && postinstall"
+            echo_green "Running postinstall function"
 
+            if [[ $PHP_FPM_IMAGE ]]; then
+                docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} -f ${DIR_DOCKERCOMPOSES}/docker-compose-app-php-fpm-user.yml \
+                    run --no-deps --rm php-fpm \
+                        bash -c "source /tmp/config && HOME=/tmp && cd /var/www/html && postinstall"
+            else
+                if [[ $APACHE_IMAGE ]]; then
+                    docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} -f ${DIR_DOCKERCOMPOSES}/docker-compose-app-apache-user.yml \
+                        run --no-deps --rm apache \
+                            bash -c "source /tmp/config && HOME=/tmp && cd /var/www/html && postinstall"
+                fi
+            fi
         fi
-        
+
         progress 80 "Extract files"
         extract_remote_files $FILES_DIR $( [[ $PANTHEON_SITE_NAME ]] && echo 1 )
 
