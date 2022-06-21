@@ -381,7 +381,7 @@ function get_latest_db_dump_generic_ssh {
 
     /usr/bin/expect <<EOD
         set timeout 3600
-        spawn ssh -o StrictHostKeyChecking=no -p $PORT $USERNAME@$HOST mysqldump -u"${_MYSQL_USERNAME}" -p"${_MYSQL_PASSWORD}" -h"${_MYSQL_HOST}" -P"${_MYSQL_PORT}" "${_MYSQL_PATH}" \
+        spawn ssh -o StrictHostKeyChecking=no -p $PORT $USERNAME@$HOST mysqldump --no-tablespaces -u"${_MYSQL_USERNAME}" -p"${_MYSQL_PASSWORD}" -h"${_MYSQL_HOST}" -P"${_MYSQL_PORT}" "${_MYSQL_PATH}" \
               | gzip > $FILENAME
         expect "password:" {
             send "${PASSWORD}\r"
