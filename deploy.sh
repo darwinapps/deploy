@@ -276,9 +276,10 @@ USER mapped
 }
 
 function get_latest_files_from_ssh {
+    exit_code=0;
     if [[ ! -d $DIR_WEB/$FILES_DIR ]]; then mkdir -p $DIR_WEB/$FILES_DIR; fi
-    progress 10 "Upload files synchronization from generic SSH..."
-    
+    progress 10 "Upload files synchronization from generic SSH"
+
     # username:password@hostname:port
     IFS=@ read -r USERNAMEPASSWORD HOSTPORTPATH <<< "${GENERIC_SSH}"
     IFS=: read -r USERNAME PASSWORD <<< "${USERNAMEPASSWORD}"
@@ -294,10 +295,15 @@ function get_latest_files_from_ssh {
             send "${PASSWORD}\r"
             expect eof
             }
+        catch wait result
+        exit [lindex \$result 3]
 EOD
 
-    progress 100 "Done"
+    if [[ $? != 0 ]]; then exit_code=1; fi
 
+    # progress 100 "Done"
+
+    return $exit_code
 }
 
 function get_latest_files_from_aws {
@@ -986,13 +992,23 @@ case $1 in
         fi
 
         progress 70 "Get latest upload files"
+        SYNC_ERROR=1
         if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
             get_latest_files_from_pantheon
-        elif [[ $RSYNC_DIR ]] && [[ $FILES_DIR ]] && [[ $GENERIC_SSH ]]; then
+            SYNC_ERROR=0
+        fi
+
+        if [[ $SYNC_ERROR != 0 ]] && [[ $RSYNC_DIR ]] && [[ $FILES_DIR ]] && [[ $GENERIC_SSH ]]; then
             get_latest_files_from_ssh
-        elif [[ $FILES_DIR ]]; then
+            if [[ $? != 0 ]]; then SYNC_ERROR=1
+                              else SYNC_ERROR=0
+            fi
+        fi
+
+        if [[ $SYNC_ERROR != 0 ]] && [[ $FILES_DIR ]]; then
             get_latest_files_from_aws
         fi
+
 
         if [[ $(declare -F postinstall) ]]; then
             echo_green "Running postinstall function"
@@ -1060,17 +1076,29 @@ case $1 in
         get_latest_db_dump $AWS_FILENAME_DB
         ;;
     sync-files)
+        SYNC_ERROR=1
         if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
             rm -rf $DIR_WORK/remote-files/
             get_latest_files_from_pantheon
             extract_remote_files $FILES_DIR 1
-        elif [[ $RSYNC_DIR ]] && [[ $FILES_DIR ]] && [[ $GENERIC_SSH ]]; then
+            SYNC_ERROR=0
+        fi
+
+        if [[ $SYNC_ERROR != 0 ]] && [[ $RSYNC_DIR ]] && [[ $FILES_DIR ]] && [[ $GENERIC_SSH ]]; then
             get_latest_files_from_ssh
-        elif [[ $FILES_DIR ]]; then
+            if [[ $? != 0 ]]; then SYNC_ERROR=1
+                              else SYNC_ERROR=0
+            fi
+        fi
+
+        if [[ $SYNC_ERROR != 0 ]] && [[ $FILES_DIR ]]; then
             rm -rf $DIR_WORK/remote-files/
             get_latest_files_from_aws
             extract_remote_files $FILES_DIR
         fi
+        
+        progress 100 "Done"
+        
         ;;
     upload)
         if [[ ! -d $DIR_WORK/backup ]]; then
