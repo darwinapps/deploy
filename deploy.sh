@@ -422,14 +422,15 @@ function get_latest_db_dump {
         if [[ ! -d $DIR_WORK/mysql-init-script/ ]]; then
             mkdir $DIR_WORK/mysql-init-script/
         fi
-        if [[ $BUCKET ]]; then
-            get_latest_db_dump_aws $1
-        elif [[ $PANTHEON_SITE_NAME ]]; then
+
+        if [[ $PANTHEON_SITE_NAME ]]; then
             get_latest_db_dump_pantheon
         elif [[ $GENERIC_SSH && $REMOTE_MYSQL ]]; then
             get_latest_db_dump_generic_ssh
         elif [[ $WPENGINE_SFTP ]]; then
             get_latest_db_dump_wpengine
+        elif [[ $BUCKET ]]; then
+            get_latest_db_dump_aws $1
         fi
     fi
 }
