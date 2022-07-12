@@ -242,7 +242,7 @@ ENTRYPOINT [\"git\"]
 
 function get_terminus_cli {
     DOCKERFILE='
-FROM php:7.3-cli
+FROM php:7.4-cli
 
 ENV DEBIAN_FRONTEND noninteractive
 
