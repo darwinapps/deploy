@@ -685,6 +685,9 @@ function environment_setup {
         export DOCKER_DEFAULT_PLATFORM=linux/amd64
     fi
 
+    # Replacing a dot with a dash in PROJECT
+    PROJECT=$(echo $PROJECT | sed 's!\.!\-!g')
+
     MYSQL_CONTAINER="$PROJECT-mysql"
     MYSQL_IMAGE=$MYSQL_CONTAINER
     MYSQL_DOCKERFILE=$DIR_DOCKERFILES"/"${MYSQL_DOCKERFILE:-Dockerfile.app.mysql}
