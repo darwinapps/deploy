@@ -34,5 +34,6 @@ COPY ${APACHE_CONFIG} /etc/apache2/sites-enabled/000-default.conf
 RUN sed -ri -e "s!ServerName .*!ServerName $PROJECT!" /etc/apache2/sites-enabled/000-default.conf
 RUN sed -ri -e "s!node:port!node:$NODE_PORT/!" /etc/apache2/sites-enabled/000-default.conf
 RUN sed -ri -e "s!/var/www/html!${WEB_DOCUMENT_ROOT}!g" /etc/apache2/apache2.conf /etc/apache2/sites-enabled/*.conf
+RUN sed -ri -e "s!www-data!mapped!g" /etc/apache2/envvars
 
 CMD ["apache2ctl", "-D","FOREGROUND"]
