@@ -111,7 +111,7 @@ define( 'WP_SITEURL', 'http://' . \$_SERVER['HTTP_HOST'] . '/');
 
 EOPHP
 
-			sed -r -e 's/\r$//' wp-config.php > ./tmp; cat ./tmp > wp-config.php
+			sed -r -e 's/\r$//' wp-config.php > ./tmp; cat ./tmp > wp-config.php; rm -f ./tmp;
 			chown "$user:$group" wp-config.php
 		fi
 
@@ -139,7 +139,7 @@ EOPHP
 				start="^(\s*)$(sed_escape_lhs "$key")\s*="
 				end=";"
 			fi
-			sed -r -e "s/($start\s*).*($end)$/\1$(sed_escape_rhs "$(php_escape "$value" "$var_type")")\3/" wp-config.php > ./tmp; cat ./tmp > wp-config.php
+			sed -r -e "s/($start\s*).*($end)$/\1$(sed_escape_rhs "$(php_escape "$value" "$var_type")")\3/" wp-config.php > ./tmp; cat ./tmp > wp-config.php; rm -f ./tmp;
 		}
 
 		set_config 'DB_HOST' "$WORDPRESS_DB_HOST"
