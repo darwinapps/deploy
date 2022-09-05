@@ -46,7 +46,7 @@ RUN apt-get install -y \
     wget \
     ssh \
     imagemagick \
-    cwebp \
+    webp \
     libmagickwand-dev \
     msmtp-mta
 
