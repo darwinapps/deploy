@@ -4,6 +4,8 @@ FROM ubuntu:18.04
 ENV TZ=Europe/Minsk
 ENV DEBIAN_FRONTEND noninteractive
 
+RUN echo "deb http://archive.ubuntu.com/ubuntu/ bionic-proposed main" >> /etc/apt/sources.list
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-transport-https \
     apt-utils \
