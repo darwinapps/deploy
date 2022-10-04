@@ -767,6 +767,11 @@ function environment_setup {
     fi
     REDIS_PORT=${REDIS_PORT:-6379}
 
+
+    if [[ $MTU_NETWORK ]]; then
+        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-network-mtu.yml")
+    fi
+
     if [[ $APP_NETWORK ]]; then
         DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-network.yml")
     fi
