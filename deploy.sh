@@ -1023,12 +1023,12 @@ case $1 in
             echo_green "Running postinstall function"
 
             if [[ $PHP_FPM_IMAGE ]]; then
-                docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} -f ${DIR_DOCKERCOMPOSES}/docker-compose-app-php-fpm-user.yml \
+                docker compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} -f ${DIR_DOCKERCOMPOSES}/docker-compose-app-php-fpm-user.yml \
                     run --no-deps --rm php-fpm \
                         bash -c "source /tmp/config && HOME=/tmp && cd /var/www/html && postinstall"
             else
                 if [[ $APACHE_IMAGE ]]; then
-                    docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} -f ${DIR_DOCKERCOMPOSES}/docker-compose-app-apache-user.yml \
+                    docker compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} -f ${DIR_DOCKERCOMPOSES}/docker-compose-app-apache-user.yml \
                         run --no-deps --rm apache \
                             bash -c "source /tmp/config && HOME=/tmp && cd /var/www/html && postinstall"
                 fi
@@ -1042,7 +1042,7 @@ case $1 in
         ;;
     down)
         progress 10 "Shutting down"
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} $@
+        docker compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} $@
         progress 100 "Done"
         ;;
     up)
@@ -1055,24 +1055,24 @@ case $1 in
         [[ $2 == "-d" ]] || progress 90 "Wait 2-3 min. Exit: ctrl+c"
         [[ $2 == "-d" ]] || progress 95 "\n"
 
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} $@
+        docker compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} $@
         ;;
     status)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} ps >&3
+        docker compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} ps >&3
         ;;
     run)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} run --no-deps --rm php-fpm su mapped -c "cd /var/www/html; HOME=/tmp; ${*:2}"
+        docker compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} run --no-deps --rm php-fpm su mapped -c "cd /var/www/html; HOME=/tmp; ${*:2}"
         ;;
     su-run)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} run --no-deps --rm php-fpm "${@:2}"
+        docker compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} run --no-deps --rm php-fpm "${@:2}"
         ;;	
     exec)
-        docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} exec php-fpm ${*:2}
+        docker compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} exec php-fpm ${*:2}
         ;;
 
     dump-database)
-        if [[ $(docker ps -f id=$(docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} ps -q mysql) -q) != ""  ]]; then
-            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} exec -T mysql mysqldump -uroot $MYSQL_DATABASE "${@:2}"
+        if [[ $(docker ps -f id=$(docker compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} ps -q mysql) -q) != ""  ]]; then
+            docker compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} exec -T mysql mysqldump -uroot $MYSQL_DATABASE "${@:2}"
         else
             echo_red "MYSQL container is not running"
             exit 1
@@ -1114,8 +1114,8 @@ case $1 in
             mkdir $DIR_WORK/backup
         fi 
         FILENAME=$MYSQL_CONTAINER-$(date +%Y-%m-%d.%H:%M:%S).sql.gz
-        if [[ $(docker ps -f id=$(docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@] --project-directory ${PWD}} ps -q mysql) -q) != ""  ]]; then
-            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} exec -T mysql mysqldump -uroot $MYSQL_DATABASE | gzip - > $DIR_WORK/backup/$FILENAME
+        if [[ $(docker ps -f id=$(docker compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@] --project-directory ${PWD}} ps -q mysql) -q) != ""  ]]; then
+            docker compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} exec -T mysql mysqldump -uroot $MYSQL_DATABASE | gzip - > $DIR_WORK/backup/$FILENAME
         else
             echo_red "MYSQL container is not running"
             exit 1
