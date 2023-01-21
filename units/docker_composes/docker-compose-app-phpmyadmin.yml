@@ -1,0 +1,12 @@
+version: '3.1'
+
+services:
+    phpmyadmin:
+        container_name: $PHPMYADMIN_CONTAINER
+        image: $PHPMYADMIN_CONTAINER
+        environment:
+            PMA_HOST: mysql
+            PMA_PORT: $MYSQL_PORT
+            PMA_USER: $MYSQL_USER
+            PMA_PASSWORD: $MYSQL_PASSWORD
+            PMA_ARBITRARY: 1

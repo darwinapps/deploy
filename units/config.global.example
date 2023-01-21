@@ -1,3 +1,11 @@
-MTU_NETWORK=1420
-MYSQL_PORT_MAP=3316:3306
-UPDATE="off"
+### If you need to apply additional parameters for the deploy.sh script to work,
+### then rename this file to config.global and uncomment the necessary lines
+
+# UPDATE="off"                                # Disables script self-updating deploy.sh
+
+# MTU_NETWORK=1420                            # It is necessary for the correct operation of the docker container over HTTPS protocol under VPN
+
+# MYSQL_PORT_MAP=3316:3306                    # Sets the mapping of local ports with to a port inside the MySQL docker container
+
+# PHPMYADMIN_IMAGE="phpmyadmin:latest"        # To enable phpMyAdmin
+# PHPMYADMIN_PORT_MAP=8080:80                 # Sets the mapping of local ports with to a port inside the phpMyAdmin docker container

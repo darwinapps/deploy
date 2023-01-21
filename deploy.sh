@@ -698,12 +698,13 @@ function environment_setup {
     PHP_FPM_CONTAINER="$PROJECT-php-fpm"
     NODE_CONTAINER="$PROJECT-node"
     REDIS_CONTAINER="$PROJECT-redis"
+    PHPMYADMIN_CONTAINER="$PROJECT-phpmyadmin"
 
     APACHE_DOCKERFILE=($DIR_DOCKERFILES"/Dockerfile.app.apache")
     PHP_FPM_DOCKERFILE=($DIR_DOCKERFILES"/Dockerfile.app.php-fpm")
     NODE_DOCKERFILE=($DIR_DOCKERFILES"/Dockerfile.app.node")
-    
     REDIS_DOCKERFILE=($DIR_DOCKERFILES"/Dockerfile.app.redis")
+    PHPMYADMIN_DOCKERFILE=($DIR_DOCKERFILES"/Dockerfile.app.phpmyadmin")
 
     APP_DOCKERFILES=""
     APP_TYPE=${APP_TYPE:-empty}
@@ -725,6 +726,7 @@ function environment_setup {
     if [[ $PHP_FPM_IMAGE ]]; then DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-php-fpm.yml"); fi
     if [[ $NODE_IMAGE ]]; then DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-node.yml"); fi
     if [[ $REDIS_IMAGE ]]; then DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-redis.yml"); fi
+    if [[ $PHPMYADMIN_IMAGE ]]; then DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-phpmyadmin.yml"); fi
 
     if [[ $MYSQL_DATABASE ]]; then
         DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-mysql.yml")
@@ -760,13 +762,12 @@ function environment_setup {
     NODE_PORT=${NODE_PORT:-3000}
 
     if [[ $REDIS_PORT_MAP ]]; then
-        if [[ ! $REDIS_PORT ]]; then
-            IFS=: read -r REDIS_EXTERNAL_PORT REDIS_PORT <<< "$REDIS_PORT_MAP"
-        fi
         DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-redis-ports.yml")
     fi
-    REDIS_PORT=${REDIS_PORT:-6379}
 
+    if [[ $PHPMYADMIN_PORT_MAP ]]; then
+        DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-phpmyadmin-ports.yml")
+    fi
 
     if [[ $MTU_NETWORK ]]; then
         DOCKER_COMPOSE_ARGS+=("-f" "${DIR_DOCKERCOMPOSES}/docker-compose-app-network-mtu.yml")
@@ -987,6 +988,20 @@ case $1 in
                 --build-arg REDIS_IMAGE=$REDIS_IMAGE \
                 -f - \
                 -t $REDIS_CONTAINER . || exit 1
+            printf "\n"       
+        fi
+
+        if [[ $PHPMYADMIN_IMAGE ]]; then
+            progress 46 "Docker pull phpMyAdmin"
+            printf "\n\e[1;34m"
+            docker pull ${PHPMYADMIN_IMAGE}
+            printf "\n\e[0m"
+
+            progress 48 "Docker build phpMyAdmin"
+            cat ${PHPMYADMIN_DOCKERFILE} | docker --log-level "error" build \
+                --build-arg PHPMYADMIN_IMAGE=$PHPMYADMIN_IMAGE \
+                -f - \
+                -t $PHPMYADMIN_CONTAINER . || exit 1
             printf "\n"       
         fi
 
