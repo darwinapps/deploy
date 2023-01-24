@@ -350,13 +350,17 @@ function get_latest_db_dump_wpengine {
     IFS=@ read -r USERNAMEPASSWORD HOSTPORTPATH <<< "${WPENGINE_SFTP}"
     IFS=: read -r PROTO USERNAME PASSWORD <<< "${USERNAMEPASSWORD}"
     IFS=/ read -r HOSTPORT JUNK<<< "$HOSTPORTPATH"
+    IFS=: read -r HOST PORT<<< "$HOSTPORT"
     DBDUMP_URI="${PROTO}:${USERNAME}@${HOSTPORT}/wp-content/mysql.sql"
+
+    # Removes all keys belonging to the specified hostname from a known_hosts file
+    ssh-keygen -f ~/.ssh/known_hosts -R "[$HOST]:$PORT" 2> /dev/null
 
     echo "Downloading database dump from WPENGINE..."
     /usr/bin/expect <<EOD
         log_user 0
         set timeout 300
-        spawn sftp -o StrictHostKeyChecking=no  -q $DBDUMP_URI $DIR_WORK/mysql-init-script/$FILENAME
+        spawn sftp -o StrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -q $DBDUMP_URI $DIR_WORK/mysql-init-script/$FILENAME
         expect "password:" { send "${PASSWORD}\n" }
         expect eof
 EOD
