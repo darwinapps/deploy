@@ -10,7 +10,7 @@ ARG USERID
 ARG GROUPID
 
 RUN bash -c 'if [[ $(getent group $GROUPID | cut -d: -f1) == "" ]]; then groupadd -g $GROUPID mapped; else groupmod --new-name mapped $(getent group $GROUPID | cut -d: -f1); fi'
-RUN bash -c 'if [[ $(id -u mapped 2>/dev/null) == "" ]]; then useradd -r -g mapped -u $USERID --home-dir /var/www/html/ mapped; else usermod -u $USERID mapped; fi'
+RUN bash -c 'if [[ $(id -u mapped 2>/dev/null) == "" ]]; then useradd -r -g mapped -u $USERID --home-dir /var/www/html/ --shell /bin/bash mapped; else usermod -u $USERID mapped; fi'
 
 ARG APP_TYPE
 ARG DIR_SCRIPTS

@@ -16,6 +16,7 @@ RUN useradd \
       --uid $USERID \
       --gid $GROUPID \
       --home-dir /var/www/html/ \
+      --shell /bin/bash \
       mapped
 
 # -- end fixing user permissions

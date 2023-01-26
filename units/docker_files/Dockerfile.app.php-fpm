@@ -56,6 +56,7 @@ RUN useradd \
       --uid $USERID \
       --gid $GROUPID \
       --home-dir /var/www/html/ \
+      --shell /bin/bash \
       mapped
 
 ENV APACHE_RUN_USER mapped
