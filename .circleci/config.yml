@@ -113,7 +113,7 @@ jobs:
 
 
 workflows:
-  main:
+  main_build:
     jobs:
       - build:
           filters:
@@ -122,7 +122,7 @@ workflows:
                 - master
                 - develop
 
-  main:
+  schedule_build:
     when: << pipeline.parameters.onSchedule >>
     jobs:
       - build
