@@ -3,6 +3,13 @@ version: 2.1
 orbs:
   aws-cli: circleci/aws-cli@2.0.0
 
+
+parameters:
+  onSchedule:
+    type: string
+    default: ""
+
+
 jobs:
   build:
     machine:
@@ -42,6 +49,23 @@ jobs:
                 fi
             done
             echo "export IMAGE_TAGS=\"${IMAGE_TAGS[@]}\"" >> $BASH_ENV
+
+      - run:
+          name: Build docker images on schedule
+          command: |
+            DIR_DOCKER_FILES="autobuild"
+
+            for FILE in "$DIR_DOCKER_FILES"/*; do
+                IMAGE_TAG=$(grep "IMAGE_TAG" $FILE | awk '{print $3}')
+                if [ ! -z "$IMAGE_TAG" ]; then
+                  IMAGE_TAGS+=($IMAGE_TAG)
+                  docker build -t $REGISTRY_HOST/$IMAGE_TAG -f ./$FILE .
+                fi
+            done
+            echo "export IMAGE_TAGS=\"${IMAGE_TAGS[@]}\"" >> $BASH_ENV
+
+          when: << pipeline.parameters.onSchedule >>
+
 
       - run:
           name: Push docker images to Docker Registry
@@ -97,3 +121,8 @@ workflows:
               only:
                 - master
                 - develop
+
+  main:
+    when: << pipeline.parameters.onSchedule >>
+    jobs:
+      - build
