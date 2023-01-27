@@ -53,18 +53,18 @@ jobs:
       - run:
           name: Build docker images on schedule
           command: |
-            DIR_DOCKER_FILES="autobuild"
+            if [[ ! -z << pipeline.parameters.onSchedule >> ]]; then
+              DIR_DOCKER_FILES="autobuild"
 
-            for FILE in "$DIR_DOCKER_FILES"/*; do
-                IMAGE_TAG=$(grep "IMAGE_TAG" $FILE | awk '{print $3}')
-                if [ ! -z "$IMAGE_TAG" ]; then
-                  IMAGE_TAGS+=($IMAGE_TAG)
-                  docker build -t $REGISTRY_HOST/$IMAGE_TAG -f ./$FILE .
-                fi
-            done
-            echo "export IMAGE_TAGS=\"${IMAGE_TAGS[@]}\"" >> $BASH_ENV
-
-          when: << pipeline.parameters.onSchedule >>
+              for FILE in "$DIR_DOCKER_FILES"/*; do
+                  IMAGE_TAG=$(grep "IMAGE_TAG" $FILE | awk '{print $3}')
+                  if [ ! -z "$IMAGE_TAG" ]; then
+                    IMAGE_TAGS+=($IMAGE_TAG)
+                    docker build -t $REGISTRY_HOST/$IMAGE_TAG -f ./$FILE .
+                  fi
+              done
+              echo "export IMAGE_TAGS=\"${IMAGE_TAGS[@]}\"" >> $BASH_ENV
+            fi
 
 
       - run:
