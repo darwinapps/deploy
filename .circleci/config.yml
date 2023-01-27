@@ -51,21 +51,24 @@ jobs:
       - run:
           name: Build docker images
           command: |
-            set +e
+            onSchedule=<< pipeline.parameters.onSchedule >>
+            if [[ -z $onSchedule ]]; then
+              set +e
 
-            DIR_DOCKER_FILES="autobuild"
-            DIFF_FILES=$(git diff --numstat HEAD^ | grep $DIR_DOCKER_FILES | awk '{print $3}')
+              DIR_DOCKER_FILES="autobuild"
+              DIFF_FILES=$(git diff --numstat HEAD^ | grep $DIR_DOCKER_FILES | awk '{print $3}')
 
-            if [ ! ${DIFF_FILES[@]} ]; then echo "STOP"; circleci-agent step halt; fi
+              if [ ! ${DIFF_FILES[@]} ]; then echo "STOP"; circleci-agent step halt; fi
 
-            for FILE in ${DIFF_FILES[@]}; do
-                IMAGE_TAG=$(grep "IMAGE_TAG" $FILE | awk '{print $3}')
-                if [ ! -z "$IMAGE_TAG" ]; then
-                  IMAGE_TAGS+=($IMAGE_TAG)
-                  docker build -t $REGISTRY_HOST/$IMAGE_TAG -f ./$FILE .
-                fi
-            done
-            echo "export IMAGE_TAGS=\"${IMAGE_TAGS[@]}\"" >> $BASH_ENV
+              for FILE in ${DIFF_FILES[@]}; do
+                  IMAGE_TAG=$(grep "IMAGE_TAG" $FILE | awk '{print $3}')
+                  if [ ! -z "$IMAGE_TAG" ]; then
+                    IMAGE_TAGS+=($IMAGE_TAG)
+                    docker build -t $REGISTRY_HOST/$IMAGE_TAG -f ./$FILE .
+                  fi
+              done
+              echo "export IMAGE_TAGS=\"${IMAGE_TAGS[@]}\"" >> $BASH_ENV
+            fi
 
       - run:
           name: Push docker images to Docker Registry
