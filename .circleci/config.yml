@@ -32,6 +32,22 @@ jobs:
             aws ecr get-login-password | docker login --username AWS --password-stdin $REGISTRY_HOST
 
       - run:
+          name: Build docker images on schedule
+          command: |
+            if [[ ! -z << pipeline.parameters.onSchedule >> ]]; then
+              DIR_DOCKER_FILES="autobuild"
+
+              for FILE in "$DIR_DOCKER_FILES"/*; do
+                  IMAGE_TAG=$(grep "IMAGE_TAG" $FILE | awk '{print $3}')
+                  if [ ! -z "$IMAGE_TAG" ]; then
+                    IMAGE_TAGS+=($IMAGE_TAG)
+                    docker build -t $REGISTRY_HOST/$IMAGE_TAG -f ./$FILE .
+                  fi
+              done
+              echo "export IMAGE_TAGS=\"${IMAGE_TAGS[@]}\"" >> $BASH_ENV
+            fi
+
+      - run:
           name: Build docker images
           command: |
             set +e
@@ -49,23 +65,6 @@ jobs:
                 fi
             done
             echo "export IMAGE_TAGS=\"${IMAGE_TAGS[@]}\"" >> $BASH_ENV
-
-      - run:
-          name: Build docker images on schedule
-          command: |
-            if [[ ! -z << pipeline.parameters.onSchedule >> ]]; then
-              DIR_DOCKER_FILES="autobuild"
-
-              for FILE in "$DIR_DOCKER_FILES"/*; do
-                  IMAGE_TAG=$(grep "IMAGE_TAG" $FILE | awk '{print $3}')
-                  if [ ! -z "$IMAGE_TAG" ]; then
-                    IMAGE_TAGS+=($IMAGE_TAG)
-                    docker build -t $REGISTRY_HOST/$IMAGE_TAG -f ./$FILE .
-                  fi
-              done
-              echo "export IMAGE_TAGS=\"${IMAGE_TAGS[@]}\"" >> $BASH_ENV
-            fi
-
 
       - run:
           name: Push docker images to Docker Registry
