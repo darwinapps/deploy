@@ -121,8 +121,3 @@ workflows:
               only:
                 - master
                 - develop
-
-  schedule_build:
-    when: << pipeline.parameters.onSchedule >>
-    jobs:
-      - build
