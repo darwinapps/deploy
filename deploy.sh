@@ -1086,7 +1086,7 @@ case $1 in
         docker compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} run --no-deps --rm php-fpm "${@:2}"
         ;;	
     exec)
-        docker compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} exec php-fpm ${*:2}
+        docker compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} exec php-fpm su mapped -c "cd /var/www/html; HOME=/tmp; ${*:2}"
         ;;
 
     dump-database)
