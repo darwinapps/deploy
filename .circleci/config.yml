@@ -49,7 +49,7 @@ jobs:
               DIR_DOCKER_FILES="autobuild"
 
               if [[ -z $onSchedule ]]; then
-                DIFF_FILES=$(git diff --numstat HEAD^ | grep $DIR_DOCKER_FILES | awk '{print $3}')
+                DIFF_FILES=$(git diff --numstat HEAD^ | (grep $DIR_DOCKER_FILES || true) | awk '{print $3}')
                 if [ ! ${DIFF_FILES[@]} ]; then echo "STOP"; circleci-agent step halt; fi
                 FILES=${DIFF_FILES[@]}
               else
