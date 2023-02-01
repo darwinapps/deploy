@@ -8,6 +8,12 @@ parameters:
   onSchedule:
     type: string
     default: ""
+  dockerImage:
+    type: string
+    default: ""
+  dockerImageTag:
+    type: string
+    default: ""
 
 
 jobs:
@@ -16,66 +22,46 @@ jobs:
       image: ubuntu-2004:202010-01
 
     working_directory: ~/repo
+    
+    environment:
+      onSchedule: << pipeline.parameters.onSchedule >>
+      dockerImage: << pipeline.parameters.dockerImage >>
+      dockerImageTag: << pipeline.parameters.dockerImageTag >>
 
     steps:
       - checkout
       - aws-cli/install
 
       - run:
-          name: Setup Environment Variables
+          name: Building docker images
           command: |
-            echo "export REGISTRY_HOST=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com" >> $BASH_ENV
-
-      - run:
-          name: Authorization in Docker Registry
-          command: |
-            aws ecr get-login-password | docker login --username AWS --password-stdin $REGISTRY_HOST
-
-      - run:
-          name: Build docker images on schedule
-          command: |
-            onSchedule=<< pipeline.parameters.onSchedule >>
-            if [[ ! -z $onSchedule ]]; then
-              DIR_DOCKER_FILES="autobuild"
-
-              for FILE in "$DIR_DOCKER_FILES"/*; do
-                  IMAGE_TAG=$(grep "IMAGE_TAG" $FILE | awk '{print $3}')
-                  if [ ! -z "$IMAGE_TAG" ]; then
-                    IMAGE_TAGS+=($IMAGE_TAG)
-                    docker build -t $REGISTRY_HOST/$IMAGE_TAG -f ./$FILE .
-                  fi
-              done
-              echo "export IMAGE_TAGS=\"${IMAGE_TAGS[@]}\"" >> $BASH_ENV
-            fi
-
-      - run:
-          name: Build docker images
-          command: |
-            onSchedule=<< pipeline.parameters.onSchedule >>
-            if [[ -z $onSchedule ]]; then
+            if [[ -z $dockerImage ]]; then
               set +e
-
               DIR_DOCKER_FILES="autobuild"
-              DIFF_FILES=$(git diff --numstat HEAD^ | grep $DIR_DOCKER_FILES | awk '{print $3}')
 
-              if [ ! ${DIFF_FILES[@]} ]; then echo "STOP"; circleci-agent step halt; fi
-
-              for FILE in ${DIFF_FILES[@]}; do
+              if [[ -z $onSchedule ]]; then
+                DIFF_FILES=$(git diff --numstat HEAD^ | grep $DIR_DOCKER_FILES | awk '{print $3}')
+                if [ ! ${DIFF_FILES[@]} ]; then echo "STOP"; circleci-agent step halt; fi
+                FILES=${DIFF_FILES[@]}
+              else
+                FILES=$(ls $DIR_DOCKER_FILES/*)
+              fi
+              
+              for FILE in ${FILES[@]}; do
                   IMAGE_TAG=$(grep "IMAGE_TAG" $FILE | awk '{print $3}')
                   if [ ! -z "$IMAGE_TAG" ]; then
-                    IMAGE_TAGS+=($IMAGE_TAG)
-                    docker build -t $REGISTRY_HOST/$IMAGE_TAG -f ./$FILE .
+                    curl --location --request POST 'https://circleci.com/api/v2/project/github/darwinapps/deploy/pipeline' \
+                    --header 'Content-Type: application/json' \
+                    --data '{"branch": "master", "parameters": {"onSchedule":"'"${onSchedule}"'","dockerImage":"'"${FILE}"'","dockerImageTag":"'"${IMAGE_TAG}"'"}}' \
+                    -u "${API_TOKEN}"
                   fi
               done
-              echo "export IMAGE_TAGS=\"${IMAGE_TAGS[@]}\"" >> $BASH_ENV
+            else
+              REGISTRY_HOST=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com
+              aws ecr get-login-password | docker login --username AWS --password-stdin $REGISTRY_HOST
+              docker build -t $REGISTRY_HOST/$dockerImageTag -f ./$dockerImage .
+              docker push $REGISTRY_HOST/$dockerImageTag
             fi
-
-      - run:
-          name: Push docker images to Docker Registry
-          command: |
-            for IMAGE_TAG in ${IMAGE_TAGS[@]}; do
-              docker push $REGISTRY_HOST/$IMAGE_TAG
-            done
 
       - run:
           command: echo "export onBUILD=0" >> $BASH_ENV
@@ -123,4 +109,3 @@ workflows:
             branches:
               only:
                 - master
-                - develop
