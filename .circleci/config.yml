@@ -33,10 +33,19 @@ jobs:
       - aws-cli/install
 
       - run:
+          name:
+          command: |
+            if [[ ! -z $dockerImage ]]; then
+              echo "Starting build"
+              echo "  docker file: "$dockerImage
+              echo "  docker image tag: "$dockerImageTag
+              echo
+            fi
+
+      - run:
           name: Building docker images
           command: |
             if [[ -z $dockerImage ]]; then
-              set +e
               DIR_DOCKER_FILES="autobuild"
 
               if [[ -z $onSchedule ]]; then
@@ -48,13 +57,13 @@ jobs:
               fi
               
               for FILE in ${FILES[@]}; do
-              echo "Starting build "$FILE
+              echo "Starting build "$FILE; echo
                   IMAGE_TAG=$(grep "IMAGE_TAG" $FILE | awk '{print $3}')
                   if [ ! -z "$IMAGE_TAG" ]; then
                     curl --location --request POST 'https://circleci.com/api/v2/project/github/darwinapps/deploy/pipeline' \
                     --header 'Content-Type: application/json' \
                     --data '{"branch": "master", "parameters": {"onSchedule":"'"${onSchedule}"'","dockerImage":"'"${FILE}"'","dockerImageTag":"'"${IMAGE_TAG}"'"}}' \
-                    -u "${API_TOKEN}"
+                    --header "Circle-Token: ${API_TOKEN}"
                   fi
               done
             else
@@ -84,13 +93,23 @@ jobs:
             t2=$(date -u -d "$t2" +"%H:%M:%S")
             t3=$(date -u -d "0 $(date -u -d "$t1" +"%s") sec - $(date -u -d "$t2" +"%s") sec" +"%H:%M:%S")
 
-            Subjectstr='SUCCESS! Commit '$Commithash' ('$Commitstr') was built successfully ('$t3')!'
-            Messagestr='The build on the branch '$CIRCLE_BRANCH' in the project '$CIRCLE_PROJECT_USERNAME'/'$CIRCLE_PROJECT_REPONAME' on CircleCI completed successfully!'
+            if [[ -z $dockerImage ]]; then
+              Subjectstr='SUCCESS! Commit '$Commithash' ('$Commitstr') was built successfully ('$t3')!'
+              Messagestr='The build on the branch '$CIRCLE_BRANCH' in the project '$CIRCLE_PROJECT_USERNAME'/'$CIRCLE_PROJECT_REPONAME' on CircleCI completed successfully!'
+            else
+              Subjectstr='SUCCESS! The build of the docker image 'dockerImageTag' from file '$dockerImage' was successful!'
+              Messagestr='SUCCESS! The build of the docker image 'dockerImageTag' from file '$dockerImage' was successful!'
+            fi
 
             if [ $onBUILD -eq 1 ]; then
-              Subjectstr='FAILED! Commit '$Commithash' ('$Commitstr') was built unsuccessfully ('$t3')!'
-              Messagestr=$(printf "%s\r\n%s\n" "The build on the branch $CIRCLE_BRANCH in the project $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME on CircleCI failed!"\
-                                               "Please contact the devops engineer at DarwinApps.")
+              if [[ -z $dockerImage ]]; then
+                Subjectstr='FAILED! Commit '$Commithash' ('$Commitstr') was built unsuccessfully ('$t3')!'
+                Messagestr=$(printf "%s\r\n%s\n" "The build on the branch $CIRCLE_BRANCH in the project $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME on CircleCI failed!"\
+                                                 "Please contact the devops engineer at DarwinApps.")
+              else
+                Subjectstr='FAILED! The build of the docker image 'dockerImageTag' from file '$dockerImage' was unsuccessful!'
+                Messagestr='FAILED! The build of the docker image 'dockerImageTag' from file '$dockerImage' was unsuccessful!'
+              fi
             fi
 
             curl -s --user 'api:'$MAILGUN_APIKEY\
