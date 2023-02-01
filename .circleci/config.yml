@@ -33,7 +33,7 @@ jobs:
       - aws-cli/install
 
       - run:
-          name:
+          name: Docker image name
           command: |
             if [[ ! -z $dockerImage ]]; then
               echo "Starting build"
