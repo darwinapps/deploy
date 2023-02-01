@@ -48,6 +48,7 @@ jobs:
               fi
               
               for FILE in ${FILES[@]}; do
+              echo "Starting build "$FILE
                   IMAGE_TAG=$(grep "IMAGE_TAG" $FILE | awk '{print $3}')
                   if [ ! -z "$IMAGE_TAG" ]; then
                     curl --location --request POST 'https://circleci.com/api/v2/project/github/darwinapps/deploy/pipeline' \
