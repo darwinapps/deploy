@@ -97,8 +97,8 @@ jobs:
               Subjectstr='SUCCESS! Commit '$Commithash' ('$Commitstr') was built successfully ('$t3')!'
               Messagestr='The build on the branch '$CIRCLE_BRANCH' in the project '$CIRCLE_PROJECT_USERNAME'/'$CIRCLE_PROJECT_REPONAME' on CircleCI completed successfully!'
             else
-              Subjectstr='SUCCESS! The build of the docker image 'dockerImageTag' from file '$dockerImage' was successful!'
-              Messagestr='SUCCESS! The build of the docker image 'dockerImageTag' from file '$dockerImage' was successful!'
+              Subjectstr='SUCCESS! The build of the docker image '$dockerImageTag' from file '$dockerImage' was successful!'
+              Messagestr='SUCCESS! The build of the docker image '$dockerImageTag' from file '$dockerImage' was successful!'
             fi
 
             if [ $onBUILD -eq 1 ]; then
@@ -107,8 +107,8 @@ jobs:
                 Messagestr=$(printf "%s\r\n%s\n" "The build on the branch $CIRCLE_BRANCH in the project $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME on CircleCI failed!"\
                                                  "Please contact the devops engineer at DarwinApps.")
               else
-                Subjectstr='FAILED! The build of the docker image 'dockerImageTag' from file '$dockerImage' was unsuccessful!'
-                Messagestr='FAILED! The build of the docker image 'dockerImageTag' from file '$dockerImage' was unsuccessful!'
+                Subjectstr='FAILED! The build of the docker image '$dockerImageTag' from file '$dockerImage' was unsuccessful!'
+                Messagestr='FAILED! The build of the docker image '$dockerImageTag' from file '$dockerImage' was unsuccessful!'
               fi
             fi
 
