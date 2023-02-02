@@ -847,7 +847,7 @@ if [[ ! -f ./config && -d $DIR_PROJECTS/MyConfig ]]; then rm -rf $DIR_PROJECTS/M
 
 if [[ ! -d ~/.deploy ]]; then mkdir -p ~/.deploy; fi
 if [[ -d $DIR_UNITS/tools ]]; then
-    cp $DIR_UNITS/tools/* ~/.deploy/
+    cp -f $DIR_UNITS/tools/* ~/.deploy/
     for TOOL in ~/.deploy/*; do
         sed -ri -e "s!PATH_DEPLOY=.*!PATH_DEPLOY=\"$PWD\"!" $TOOL
     done
