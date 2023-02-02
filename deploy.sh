@@ -694,7 +694,9 @@ function environment_setup {
     if [[ -d $DIR_UNITS/tools ]]; then
         cp -f $DIR_UNITS/tools/* $DIR_WORKSPACE/
         for TOOL in $DIR_WORKSPACE/*; do
-            sed -r -e "s!PATH_DEPLOY=.*!PATH_DEPLOY=\"$PWD\"!" $TOOL > ./tmp; cat ./tmp > $TOOL; rm -f ./tmp;
+            if [[ -f $TOOL ]]; then
+                sed -r -e "s!PATH_DEPLOY=.*!PATH_DEPLOY=\"$PWD\"!" $TOOL > ./tmp; cat ./tmp > $TOOL; rm -f ./tmp;
+            fi
         done
     fi
 
