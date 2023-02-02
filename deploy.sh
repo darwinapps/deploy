@@ -849,7 +849,7 @@ if [[ ! -d ~/.deploy ]]; then mkdir -p ~/.deploy; fi
 if [[ -d $DIR_UNITS/tools ]]; then
     cp -f $DIR_UNITS/tools/* ~/.deploy/
     for TOOL in ~/.deploy/*; do
-        sed -ri -e "s!PATH_DEPLOY=.*!PATH_DEPLOY=\"$PWD\"!" $TOOL
+        sed -r -e "s!PATH_DEPLOY=.*!PATH_DEPLOY=\"$PWD\"!" $TOOL > ./tmp; cat ./tmp > $TOOL; rm -f ./tmp;
     done
 fi
 

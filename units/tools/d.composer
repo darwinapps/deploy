@@ -1,0 +1,6 @@
+#!/bin/sh
+
+PATH_DEPLOY="../.."
+cd $PATH_DEPLOY
+
+./deploy.sh -v exec composer $@

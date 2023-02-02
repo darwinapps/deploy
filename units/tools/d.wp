@@ -3,4 +3,4 @@
 PATH_DEPLOY="../.."
 cd $PATH_DEPLOY
 
-./deploy.sh -v exec phpcs $@
+./deploy.sh -v exec wp $@
