@@ -689,6 +689,20 @@ function environment_setup {
         export DOCKER_DEFAULT_PLATFORM=linux/amd64
     fi
 
+    # create workspace in user's homedir
+    if [[ ! -d $DIR_WORKSPACE ]]; then mkdir -p $DIR_WORKSPACE; fi
+    if [[ -d $DIR_UNITS/tools ]]; then
+        cp -f $DIR_UNITS/tools/* $DIR_WORKSPACE/
+        for TOOL in $DIR_WORKSPACE/*; do
+            sed -r -e "s!PATH_DEPLOY=.*!PATH_DEPLOY=\"$PWD\"!" $TOOL > ./tmp; cat ./tmp > $TOOL; rm -f ./tmp;
+        done
+    fi
+
+    if [[ ! -d "$DIR_WORKSPACE/vscode-server" ]]; then
+        cp -rf $DIR_UNITS/vscode-server $DIR_WORKSPACE/
+    fi
+
+
     # Replacing a dot with a dash in PROJECT
     PROJECT=$(echo $PROJECT | sed 's!\.!\-!g')
 
@@ -845,14 +859,6 @@ fi
 
 if [[ ! -f ./config && -d $DIR_PROJECTS/MyConfig ]]; then rm -rf $DIR_PROJECTS/MyConfig; rm -rf $DIR_PROJECT; fi
 
-if [[ ! -d ~/.deploy ]]; then mkdir -p ~/.deploy; fi
-if [[ -d $DIR_UNITS/tools ]]; then
-    cp -f $DIR_UNITS/tools/* ~/.deploy/
-    for TOOL in ~/.deploy/*; do
-        sed -r -e "s!PATH_DEPLOY=.*!PATH_DEPLOY=\"$PWD\"!" $TOOL > ./tmp; cat ./tmp > $TOOL; rm -f ./tmp;
-    done
-fi
-
 case $1 in
     up | down | status | run | su-run | exec | dump-database | sync-database | dump-database | sync-files | upload)
         environment_setup
@@ -962,6 +968,7 @@ case $1 in
                 --build-arg MAILGUN_USER=$MAILGUN_USER \
                 --build-arg MAILGUN_PASSWORD=$MAILGUN_PASSWORD \
                 --build-arg DIR_UNITS=$DIR_UNITS \
+                --build-arg DIR_WORKSPACE=$DIR_WORKSPACE \
                 -f - \
                 -t $PHP_FPM_CONTAINER . || exit 1
             printf "\n"       

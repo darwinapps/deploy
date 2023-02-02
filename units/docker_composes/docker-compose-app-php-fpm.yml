@@ -5,6 +5,7 @@ services:
         container_name: $PHP_FPM_CONTAINER
         image: $PHP_FPM_CONTAINER
         volumes:
+            - "${DIR_WORKSPACE}/vscode-server/:/root/.vscode-server/:delegated"
             - "${DIR_WEB}/:/var/www/html/:delegated"
             - "${DIR_PROJECT}/config:/tmp/config:delegated"
             - "${DIR_WORK}/log/php/php-fpm.log:/var/log/php-fpm.log:delegated"

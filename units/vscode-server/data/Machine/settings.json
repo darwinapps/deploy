@@ -1,0 +1,5 @@
+{
+    "phpsab.executablePathCBF": "/usr/local/bin/phpcbf",
+    "phpsab.executablePathCS": "/usr/local/bin/phpcs",
+    "phpsab.standard": "WordPress-Core"
+}
