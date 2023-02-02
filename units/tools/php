@@ -1,5 +1,6 @@
 #!/bin/sh
 
-cd ../..
+PATH_DEPLOY="../.."
+cd $PATH_DEPLOY
 
 ./deploy.sh -v exec php $@
