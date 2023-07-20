@@ -350,11 +350,12 @@ function get_latest_db_dump_wpengine {
     ssh-keygen -f ~/.ssh/known_hosts -R "[$HOST]:$PORT" 2> /dev/null
 
     echo "Downloading database dump from WPENGINE..."
+
     /usr/bin/expect <<EOD
         log_user 0
         set timeout 300
         spawn sftp -o StrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -q $DBDUMP_URI $DIR_WORK/mysql-init-script/$FILENAME
-        expect "password:" { send "${PASSWORD}\n" }
+        expect "Password:" { send "${PASSWORD}\n" }
         expect eof
 EOD
 
