@@ -648,6 +648,22 @@ function select_project {
 
 } >&3
 
+function ssl_certificate_check {
+    echo_green "Checking the expiration of SSL certificates..."
+    if openssl x509 -checkend 0 -noout -in "$DIR_SSL/fullchain.pem" > /dev/null 2>&1; then
+        echo_green "SSL certificate has not expired"
+    else
+        echo_red "The certificate has expired"
+        ssl_certificate_pull
+
+        if openssl x509 -checkend 0 -noout -in "$DIR_SSL/fullchain.pem" > /dev/null 2>&1; then
+            echo_green "SSL certificate has been updated"
+        else
+            echo_red "SSL certificate has not been updated. Please contact support"; exit 1
+        fi
+    fi
+}
+
 function ssl_certificate_pull {
     echo_green "SSL certificates downloading..."
     mkdir -p $DIR_SSL
@@ -1083,6 +1099,8 @@ case $1 in
 
         [[ $2 == "-d" ]] || progress 90 "Wait 2-3 min. Exit: ctrl+c"
         [[ $2 == "-d" ]] || progress 95 "\n"
+
+        ssl_certificate_check
 
         docker compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} $@
         ;;
