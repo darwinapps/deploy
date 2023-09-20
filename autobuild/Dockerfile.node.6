@@ -4,15 +4,16 @@ FROM ubuntu:22.04
 RUN apt-get update
 RUN apt-get install -y \
         curl \
-        gnupg
+        gnupg \
+        yarn \
+        gulp \
+        build-essential
 
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
 
-RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
-
-RUN apt-get install -y \
-        nodejs=6* \
-        yarn \
-        build-essential
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash && \
+    export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && \
+    nvm install 6 && \
+    npm update npm -g
