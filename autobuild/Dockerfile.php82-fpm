@@ -2,6 +2,7 @@
 FROM ubuntu:22.04
 
 ENV TZ=Europe/Minsk
+
 ENV DEBIAN_FRONTEND noninteractive
 
 #RUN echo "deb http://archive.ubuntu.com/ubuntu/ bionic-proposed main" >> /etc/apt/sources.list
