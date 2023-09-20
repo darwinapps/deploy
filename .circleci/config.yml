@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  aws-cli: circleci/aws-cli@2.0.0
+  aws-cli: circleci/aws-cli@4.1.1
 
 
 parameters:
@@ -19,7 +19,7 @@ parameters:
 jobs:
   build:
     machine:
-      image: ubuntu-2004:202010-01
+      image: ubuntu-2204:2023.07.2
 
     working_directory: ~/repo
     
