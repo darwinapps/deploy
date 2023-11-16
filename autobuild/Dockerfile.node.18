@@ -19,8 +19,8 @@ ENV NODE_VERSION 18
 RUN mkdir -p $NVM_DIR && \
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | NVM_DIR=$NVM_DIR bash
 
-ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+RUN echo 'export NVM_DIR="/usr/local/nvm"' >> /etc/profile
+RUN echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> /etc/profile
+RUN echo 'export PATH="$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH"' >> /etc/profile
 
-RUN . $NVM_DIR/nvm.sh && \
-    nvm install $NODE_VERSION && \
-    npm install -g npm
+RUN /bin/bash -c "source /etc/profile && nvm install $NODE_VERSION && npm install -g npm"
