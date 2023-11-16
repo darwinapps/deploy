@@ -1,26 +1,16 @@
 # IMAGE_TAG node:18
 FROM ubuntu:22.04
 
-RUN apt-get update
-RUN apt-get install -y \
-        curl \
-        gnupg \
-        yarn \
-        gulp \
-        build-essential
-
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-
-RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
+RUN apt-get update && \
+    apt-get install -y curl gnupg yarn gulp build-essential && \
+    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
+    echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
 
 ENV NVM_DIR /usr/local/nvm
 ENV NODE_VERSION 18
-
 RUN mkdir -p $NVM_DIR && \
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | NVM_DIR=$NVM_DIR bash
-
-RUN echo 'export NVM_DIR="/usr/local/nvm"' >> /etc/profile
-RUN echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> /etc/profile
-RUN echo 'export PATH="$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH"' >> /etc/profile
-
-RUN /bin/bash -c "source /etc/profile && nvm install $NODE_VERSION && npm install -g npm"
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | NVM_DIR=$NVM_DIR bash && \
+    echo 'export NVM_DIR="/usr/local/nvm"' >> /etc/profile.d/nvm.sh && \
+    echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && nvm use $NODE_VERSION' >> /etc/profile.d/nvm.sh && \
+    chmod +x /etc/profile.d/nvm.sh && \
+    /bin/bash -c "source /etc/profile.d/nvm.sh && nvm install $NODE_VERSION && npm install -g npm"
