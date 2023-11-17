@@ -549,7 +549,12 @@ function init_php_fpm_image {
 
 function init_node_image {
     # username:password@hostname:port
-    IFS=@ read -r USERNAMEPASSWORD REGISTRYIMAGE <<< "${NODE_IMAGE}"
+
+    USERNAMEPASSWORD=""; REGISTRYIMAGE="${NODE_IMAGE}"
+    if [[ "$NODE_IMAGE" == *@* ]]; then
+        IFS=@ read -r USERNAMEPASSWORD REGISTRYIMAGE <<< "${NODE_IMAGE}"
+    fi
+
     IFS=: read -r USERNAME PASSWORD <<< "${USERNAMEPASSWORD}"
     IFS=/ read -r SOURCE_IMAGE TARGET_IMAGE_TAG <<< "${REGISTRYIMAGE}"
     IFS=: read -r TARGET_IMAGE TAG <<< "${TARGET_IMAGE_TAG}"

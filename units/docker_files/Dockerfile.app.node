@@ -9,8 +9,31 @@ ARG NODE_IMAGE
 ARG USERID
 ARG GROUPID
 
-RUN bash -c 'if [[ $(getent group $GROUPID | cut -d: -f1) == "" ]]; then groupadd -g $GROUPID mapped; else groupmod --new-name mapped $(getent group $GROUPID | cut -d: -f1); fi'
-RUN bash -c 'if [[ $(id -u mapped 2>/dev/null) == "" ]]; then useradd -r -g mapped -u $USERID --home-dir /var/www/html/ --shell /bin/bash mapped; else usermod -u $USERID mapped; fi'
+# RUN bash -c 'if [[ $(getent group $GROUPID | cut -d: -f1) == "" ]]; then groupadd -g $GROUPID mapped; else groupmod --new-name mapped $(getent group $GROUPID | cut -d: -f1); fi'
+# RUN bash -c 'if [[ $(id -u mapped 2>/dev/null) == "" ]]; then useradd -r -g mapped -u $USERID --home-dir /var/www/html/ --shell /bin/bash mapped; else usermod -u $USERID mapped; fi'
+
+RUN existing_group=$(getent group $GROUPID | cut -d: -f1) ; \
+    if [ -z "$existing_group" ]; then \
+        groupadd -g $GROUPID mapped; \
+    else \
+        existing_group_gid=$(getent group $existing_group | cut -d: -f3); \
+        if [ "$existing_group_gid" != "$GROUPID" ]; then \
+            groupmod -g $GROUPID $existing_group; \
+        fi; \
+    fi ; \
+    if ! id -u mapped &>/dev/null; then \
+        if id -u $USERID &>/dev/null; then \
+            existing_user=$(getent passwd $USERID | cut -d: -f1); \
+            usermod -l mapped $existing_user; \
+        else \
+            useradd -r -g $GROUPID -u $USERID --home-dir /var/www/html/ --shell /bin/bash mapped; \
+        fi; \
+    else \
+        existing_user_uid=$(id -u mapped); \
+        if [ "$existing_user_uid" != "$USERID" ]; then \
+            usermod -u $USERID mapped; \
+        fi; \
+    fi
 
 ARG APP_TYPE
 ARG DIR_SCRIPTS
