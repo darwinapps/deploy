@@ -21,8 +21,8 @@ RUN existing_group=$(getent group $GROUPID | cut -d: -f1) ; \
             groupmod -g $GROUPID $existing_group; \
         fi; \
     fi ; \
-    if ! id -u mapped &>/dev/null; then \
-        if id -u $USERID &>/dev/null; then \
+    if ! getent passwd mapped; then \
+        if getent passwd $USERID; then \
             existing_user=$(getent passwd $USERID | cut -d: -f1); \
             usermod -l mapped $existing_user; \
         else \
