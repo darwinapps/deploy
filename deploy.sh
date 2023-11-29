@@ -355,7 +355,7 @@ function get_latest_db_dump_wpengine {
         log_user 0
         set timeout 300
         spawn sftp -o StrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -q $DBDUMP_URI $DIR_WORK/mysql-init-script/$FILENAME
-        expect "Password:" { send "${PASSWORD}\n" }
+        expect -re "(P|p)assword:" { send "${PASSWORD}\n" }
         expect eof
 EOD
 
