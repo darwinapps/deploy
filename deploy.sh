@@ -4,7 +4,7 @@ exec 3>&1
 
 # Clearing all these variables occurs because when the script is restarted (self_update), these variables contain data from the first run
 MYSQL_DOCKERFILE=""; MYSQL_BASE_IMAGE=""; MYSQL_PORT=""
-MYSQL_INNODB_LOG_FILE_SIZE=""; APP_TYPE=""; AWS_FILENAME_DB=""
+MYSQL_INNODB_LOG_FILE_SIZE=""; APP_TYPE=""; AWS_FILENAME_DB=""; AWS_FILENAME_FILES=""
 APACHE_IMAGE=""
 ###
 
@@ -750,6 +750,7 @@ function environment_setup {
 
 
     AWS_FILENAME_DB=${AWS_FILENAME_DB:-latest.sql.gz}
+    AWS_FILENAME_FILES=${AWS_FILENAME_FILES:-files.tgz}
 
     if [[ -e "${DIR_DOCKERFILES}/Dockerfile.${APP_TYPE}" ]]; then
         APP_DOCKERFILES+=("${DIR_DOCKERFILES}/Dockerfile.${APP_TYPE}")
@@ -1066,7 +1067,7 @@ case $1 in
         fi
 
         if [[ $SYNC_ERROR != 0 ]] && [[ $FILES_DIR ]]; then
-            get_latest_files_from_aws
+            get_latest_files_from_aws $AWS_FILENAME_FILES
         fi
 
 
@@ -1154,8 +1155,9 @@ case $1 in
         fi
 
         if [[ $SYNC_ERROR != 0 ]] && [[ $FILES_DIR ]]; then
+            AWS_FILENAME_FILES=${2:-${AWS_FILENAME_FILES:-files.tgz}}
             rm -rf $DIR_WORK/remote-files/
-            get_latest_files_from_aws
+            get_latest_files_from_aws $AWS_FILENAME_FILES
             extract_remote_files $FILES_DIR
         fi
         
