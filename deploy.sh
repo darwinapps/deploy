@@ -307,6 +307,15 @@ function get_latest_files_from_aws {
         fi
 
         AWSID=$(get_aws_cli)
+
+        echo_green "Getting file information from AWS S3..."
+        docker run --rm -it -v "$PWD/$DIR_WORK/remote-files/:/remote-files/" \
+            -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+            -e AWS_DEFAULT_REGION=$AWS_REGION \
+            $AWSID \
+                aws s3 ls s3://$BUCKET/$FILENAME --human-readable
+
         echo_green "Downloading files from AWS..."
         docker run --rm -it -v "$PWD/$DIR_WORK/remote-files/:/remote-files/" \
             -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
@@ -406,6 +415,16 @@ EOD
 function get_latest_db_dump_aws {
     FILENAME=${1:-latest.sql.gz}
     AWSID=$(get_aws_cli)
+
+    echo_green "Getting file information from AWS S3..."
+    docker run --rm -it -v "$PWD/$DIR_WORK/mysql-init-script/:/mysql-init-script/" \
+         -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+         -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+         -e AWS_DEFAULT_REGION=$AWS_REGION \
+         $AWSID \
+             aws s3 ls s3://$BUCKET/$FILENAME --human-readable
+
+
     echo_green "Downloading database dump from AWS..."
     docker run --rm -it -v "$PWD/$DIR_WORK/mysql-init-script/:/mysql-init-script/" \
          -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
