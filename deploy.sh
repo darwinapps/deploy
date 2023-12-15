@@ -300,7 +300,7 @@ EOD
 }
 
 function get_latest_files_from_aws {
-    FILENAME=${1:-files.tgz}
+    FILENAME=${1}
     if [[ ! -f $DIR_WORK/remote-files/latest.tgz ]]; then
         if [[ ! -d $DIR_WORK/remote-files/ ]]; then
             mkdir $DIR_WORK/remote-files/
@@ -308,21 +308,45 @@ function get_latest_files_from_aws {
 
         AWSID=$(get_aws_cli)
 
-        echo_green "Getting file information from AWS S3..."
-        docker run --rm -it -v "$PWD/$DIR_WORK/remote-files/:/remote-files/" \
-            -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-            -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-            -e AWS_DEFAULT_REGION=$AWS_REGION \
-            $AWSID \
-                aws s3 ls s3://$BUCKET/$FILENAME --human-readable
+        echo_green "Checking files on AWS S3...\n"
+        FILE_LIST=$(docker run --rm -i -v "$PWD/$DIR_WORK/remote-files/:/remote-files/" \
+                    -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+                    -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+                    -e AWS_DEFAULT_REGION=$AWS_REGION \
+                    $AWSID \
+                        aws s3 ls s3://$BUCKET/ --human-readable | grep "files" | grep "tgz")
 
-        echo_green "Downloading files from AWS..."
-        docker run --rm -it -v "$PWD/$DIR_WORK/remote-files/:/remote-files/" \
-            -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-            -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-            -e AWS_DEFAULT_REGION=$AWS_REGION \
-            $AWSID \
-                aws s3 cp s3://$BUCKET/$FILENAME /remote-files/latest.tgz
+        MATCH_FOUND=false
+
+        while read -r line; do
+            CURRENT_FILE=$(echo "$line" | awk '{print $5}')
+            if [ "$CURRENT_FILE" == "$FILENAME" ]; then
+                echo_blue "$line"
+                MATCH_FOUND=true
+            else
+                echo "$line"
+            fi
+        done <<< "$FILE_LIST"
+
+        if [ "$MATCH_FOUND" == true ]; then
+            echo_green "\nGetting file information from AWS S3..."
+            docker run --rm -it -v "$PWD/$DIR_WORK/remote-files/:/remote-files/" \
+                -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+                -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+                -e AWS_DEFAULT_REGION=$AWS_REGION \
+                $AWSID \
+                    aws s3 ls s3://$BUCKET/$FILENAME --human-readable
+
+            echo_green "\nDownloading file from AWS..."
+            docker run --rm -it -v "$PWD/$DIR_WORK/remote-files/:/remote-files/" \
+                -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+                -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+                -e AWS_DEFAULT_REGION=$AWS_REGION \
+                $AWSID \
+                    aws s3 cp s3://$BUCKET/$FILENAME /remote-files/latest.tgz
+        elif [ "$FILENAME" != "list" ]; then
+            echo_red "\nNo match found for the specified file name: $FILENAME\n"
+        fi
     fi
 }
 
@@ -413,25 +437,49 @@ EOD
 }
 
 function get_latest_db_dump_aws {
-    FILENAME=${1:-latest.sql.gz}
+    FILENAME=${1}
+
     AWSID=$(get_aws_cli)
 
-    echo_green "Getting file information from AWS S3..."
-    docker run --rm -it -v "$PWD/$DIR_WORK/mysql-init-script/:/mysql-init-script/" \
-         -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-         -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-         -e AWS_DEFAULT_REGION=$AWS_REGION \
-         $AWSID \
-             aws s3 ls s3://$BUCKET/$FILENAME --human-readable
+    echo_green "Checking the database dumps on AWS S3...\n"
+    FILE_LIST=$(docker run --rm -i -v "$PWD/$DIR_WORK/mysql-init-script/:/mysql-init-script/" \
+                -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+                -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+                -e AWS_DEFAULT_REGION=$AWS_REGION \
+                $AWSID \
+                    aws s3 ls s3://$BUCKET/ --human-readable | grep "latest" | grep "sql")
 
+    MATCH_FOUND=false
 
-    echo_green "Downloading database dump from AWS..."
-    docker run --rm -it -v "$PWD/$DIR_WORK/mysql-init-script/:/mysql-init-script/" \
-         -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-         -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-         -e AWS_DEFAULT_REGION=$AWS_REGION \
-         $AWSID \
-             aws s3 cp s3://$BUCKET/$FILENAME /mysql-init-script/latest.sql.gz
+    while read -r line; do
+        CURRENT_FILE=$(echo "$line" | awk '{print $5}')
+        if [ "$CURRENT_FILE" == "$FILENAME" ]; then
+            echo_blue "$line"
+            MATCH_FOUND=true
+        else
+            echo "$line"
+        fi
+    done <<< "$FILE_LIST"
+
+    if [ "$MATCH_FOUND" == true ]; then
+        echo_green "\nGetting file information from AWS S3..."
+        docker run --rm -it -v "$PWD/$DIR_WORK/mysql-init-script/:/mysql-init-script/" \
+             -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+             -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+             -e AWS_DEFAULT_REGION=$AWS_REGION \
+             $AWSID \
+                 aws s3 ls s3://$BUCKET/$FILENAME --human-readable
+
+        echo_green "\nDownloading database dump from AWS..."
+        docker run --rm -it -v "$PWD/$DIR_WORK/mysql-init-script/:/mysql-init-script/" \
+             -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+             -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+             -e AWS_DEFAULT_REGION=$AWS_REGION \
+             $AWSID \
+                 aws s3 cp s3://$BUCKET/$FILENAME /mysql-init-script/latest.sql.gz
+    elif [ "$FILENAME" != "list" ]; then
+        echo_red "\nNo match found for the specified file name: $FILENAME\n"
+    fi
 }
 
 function get_latest_db_dump {
