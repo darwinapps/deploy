@@ -1,4 +1,4 @@
-RUN curl -sL https://github.com/drush-ops/drush-launcher/releases/download/0.6.0/drush.phar > /usr/local/bin/drush && chmod a+x /usr/local/bin/drush
+RUN curl -sL https://github.com/drush-ops/drush-launcher/releases/latest/download/drush.phar > /usr/local/bin/drush && chmod a+x /usr/local/bin/drush
 
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
