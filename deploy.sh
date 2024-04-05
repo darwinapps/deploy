@@ -543,12 +543,43 @@ function extract_remote_files {
 function display_usage {
     echo
     echo "Usage:"
-    echo "    $0 ( list | prepare | down | up | status | run | su-run | exec | git | dump-database | sync-database | sync-files | upload | clean | realclean )"
+    echo "    $0 [command] [options]"
     echo
-    echo "Global variables can be set in a file "$DIR_UNITS"/config.global"
-    echo "Sample file content:"
+    echo "Commands:"
+    echo "    list            - Lists all available projects."
+    echo "    prepare         - Prepares the selected project for deployment."
+    echo "    down            - Stop and remove containers, networks."
+    echo "    up              - Create and start containers."
+    echo "                          Can be used with '-d' option for detached mode."
+    echo "    status          - Shows the status of containers."
+    echo "    run             - Runs a one-time command against a service."
+    echo "    su-run          - Runs a one-time command as superuser against a service."
+    echo "    exec            - Executes a command in a running container."
+    echo "    git             - Executes git commands in the context of the project."
+    echo "    dump-database   - Dumps the database of the current project."
+    echo "    sync-database   - Synchronizes the database with a remote source."
+    echo "                        Additional 'list' option can be used to list all available database dumps."
+    echo "                          Example: '$0 sync-database list'."
+    echo "                        You can also specify a particular file to download."
+    echo "                          Example: '$0 sync-database my_dump.sql.gz'."
+    echo "    sync-files      - Synchronizes files with a remote source."
+    echo "                        Additional 'list' option can be used to list all available file backups."
+    echo "                          Example: '$0 sync-files list'."
+    echo "                        You can also specify a particular file to download."
+    echo "                          Example: '$0 sync-files my_backup.tgz'."
+    echo "    upload          - Uploads a file to a remote server."
+    echo "    clean           - Cleans up the project by removing untracked files."
+    echo "    realclean       - Performs a deeper clean than 'clean'."
+    echo
+    echo "Options:"
+    echo "    -v              - Enables verbose mode, providing detailed output of script execution."
+    echo "                      Example: '$0 -v up'"
+    echo "    -d              - Used with the 'up' command to run containers in detached mode,"
+    echo "                      disabling progress output. Example: '$0 up -d'"
+    echo
+    echo "Global variables can be set in a file located at \"$DIR_UNITS/config.global\"."
+    echo "Example of file content:"
     echo "    MYSQL_PORT_MAP=3316:3306"
-    echo
     echo
     exit 1;
 } >&3
@@ -1164,6 +1195,7 @@ case $1 in
         docker compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} --project-directory ${PWD} $@
         progress 100 "Done"
         ;;
+
     up)
         [[ $2 == "-d" ]] || progress 20 "Self update"
         self_update "$@"
