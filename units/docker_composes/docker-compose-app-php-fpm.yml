@@ -1,4 +1,4 @@
-version: '3.1'
+# version: '3.1'
 
 services:
     php-fpm:
@@ -16,5 +16,7 @@ services:
             WEB_DOCUMENT_ROOT: $WEB_DOCUMENT_ROOT
             WEB_ROOT: $WEB_ROOT
             WORDPRESS_TABLE_PREFIX: $WORDPRESS_TABLE_PREFIX
+            MAILGUN_USER: "${MAILGUN_USER}"
+            MAILGUN_PASSWORD: "${MAILGUN_PASSWORD}"
             LANG: C.UTF-8
-            DEBUG: $DEBUG
+            DEBUG: "${DEBUG:-false}"

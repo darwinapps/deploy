@@ -1,4 +1,4 @@
-ARG NODE_IMAGE
+ARG NODE_IMAGE=node:20
 FROM $NODE_IMAGE
 
 # NODE_IMAGE must be declared again after FROM

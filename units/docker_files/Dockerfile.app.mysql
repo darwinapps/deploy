@@ -1,4 +1,4 @@
-ARG MYSQL_BASE_IMAGE
+ARG MYSQL_BASE_IMAGE=mysql:5.6
 FROM $MYSQL_BASE_IMAGE
 
 # MYSQL_BASE_IMAGE must be declared again after FROM
@@ -6,7 +6,7 @@ ARG MYSQL_BASE_IMAGE
 
 ARG MYSQL_INNODB_LOG_FILE_SIZE
 
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN { \
     echo "[mysqld]"; \

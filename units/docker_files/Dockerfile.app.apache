@@ -1,10 +1,10 @@
-ARG APACHE_IMAGE
+ARG APACHE_IMAGE=php:7.2-apache
 FROM $APACHE_IMAGE
 
 # APACHE_IMAGE must be declared again after FROM
 ARG APACHE_IMAGE
 
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 # --- fixing user permissions
 
@@ -21,8 +21,8 @@ RUN useradd \
 
 # -- end fixing user permissions
 
-ENV APACHE_RUN_USER mapped
-ENV APACHE_RUN_GROUP mapped
+ENV APACHE_RUN_USER=mapped
+ENV APACHE_RUN_GROUP=mapped
 
 ARG PROJECT
 ARG WEB_DOCUMENT_ROOT
