@@ -29,6 +29,7 @@ RUN apt-get install -y \
     php8.3-curl \
     php8.3-zip \
     php8.3-redis \
+    php8.3-bcmath \
     curl \
     git \
     gzip \
