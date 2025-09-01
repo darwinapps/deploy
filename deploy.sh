@@ -235,7 +235,7 @@ ENTRYPOINT [\"git\"]
 
 function get_terminus_cli {
     DOCKERFILE='
-FROM php:7.4-cli
+FROM php:8.4-cli
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -251,13 +251,16 @@ RUN useradd \
 
 WORKDIR /
 
-RUN apt-get update
-RUN apt-get install -y \
-    curl \
-    unzip \
-    ssh
+RUN apt-get update && \
+    apt-get install -y \
+        curl \
+        unzip \
+        ssh && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN curl -O https://raw.githubusercontent.com/pantheon-systems/terminus-installer/master/builds/installer.phar && php installer.phar install
+RUN curl -L https://github.com/pantheon-systems/terminus/releases/download/4.0.1/terminus.phar --output /usr/local/bin/terminus && \
+    chmod +x /usr/local/bin/terminus
 
 USER mapped
 '
