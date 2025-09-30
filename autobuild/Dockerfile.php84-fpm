@@ -1,0 +1,110 @@
+# IMAGE_TAG php:8.4-fpm
+FROM ubuntu:22.04
+
+ENV TZ=Europe/Minsk
+
+ENV DEBIAN_FRONTEND noninteractive
+
+# RUN echo "deb http://archive.ubuntu.com/ubuntu/ bionic-proposed main" >> /etc/apt/sources.list
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    apt-transport-https \
+    apt-utils \
+    gnupg \
+    software-properties-common
+
+RUN add-apt-repository -y ppa:ondrej/php
+
+RUN apt-get install -y \
+    php8.4 \
+    php8.4-mysql \
+    php8.4-mysqli \
+    php8.4-pdo \
+    php8.4-gd \
+    php8.4-mbstring \
+    php8.4-imagick \
+    php8.4-dev \
+    php8.4-xml \
+    php8.4-fpm \
+    php8.4-curl \
+    php8.4-zip \
+    php8.4-redis \
+    php8.4-bcmath \
+    curl \
+    git \
+    gzip \
+    unzip \
+    zip \
+    less \
+    libwebp-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libfreetype6-dev \
+    libgeoip-dev \
+    libmcrypt-dev \
+    libzip-dev \
+    tcpdump \
+    telnet \
+    net-tools \
+    nano \
+    wget \
+    ssh \
+    imagemagick \
+    webp \
+    libmagickwand-dev \
+    msmtp-mta \
+    mc
+
+RUN apt-get install -y --no-install-recommends mysql-client || apt-get install -y --no-install-recommends default-mysql-client
+
+RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \
+    mv ./wp-cli.phar /usr/local/bin/wp && \
+    chmod +x /usr/local/bin/wp
+
+RUN curl -OL https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar && \
+    mv ./phpcs.phar /usr/local/bin/phpcs && \
+    chmod +x /usr/local/bin/phpcs
+
+RUN curl -OL https://squizlabs.github.io/PHP_CodeSniffer/phpcbf.phar && \
+    mv ./phpcbf.phar /usr/local/bin/phpcbf && \
+    chmod +x /usr/local/bin/phpcbf
+
+RUN git clone -b develop https://github.com/WordPress/WordPress-Coding-Standards.git /opt/wpcs && \
+    phpcs --config-set installed_paths /opt/wpcs
+
+RUN { \
+    echo 'opcache.memory_consumption=128'; \
+    echo 'opcache.interned_strings_buffer=8'; \
+    echo 'opcache.max_accelerated_files=4000'; \
+    echo 'opcache.revalidate_freq=0'; \
+    echo 'opcache.fast_shutdown=1'; \
+    echo 'opcache.enable_cli=1'; \
+} > /etc/php/8.4/mods-available/opcache-recommended.ini
+
+RUN { \
+    echo 'memory_limit=2G'; \
+    echo 'post_max_size=6152M'; \
+    echo 'upload_max_filesize=6144M'; \
+    echo 'max_execution_time=3600'; \
+    echo 'max_input_vars = 50000'; \
+    echo 'max_input_time=3600'; \
+    echo 'error_reporting=E_ALL'; \
+    echo 'display_errors=On'; \
+    echo 'display_startup_errors=On'; \
+    echo 'log_errors=On'; \
+    echo 'log_errors_max_len=0'; \
+    echo 'error_log=/dev/stderr'; \
+    echo 'date.timezone = "UTC"'; \
+} > /etc/php/8.4/fpm/php.ini
+
+RUN sed -ri -e "s;listen = .*;listen = 9000;" /etc/php/8.4/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^user = .*;user = mapped;" /etc/php/8.4/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^group = .*;group = mapped;" /etc/php/8.4/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^\;catch_workers_output = .*;catch_workers_output = yes;" /etc/php/8.4/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^\;php_admin_value\[error_log\].*;php_admin_value\[error_log\] = /var/log/fpm-php.www.log;" /etc/php/8.4/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^\;php_admin_flag\[log_errors\].*;php_admin_flag\[log_errors\] = on;" /etc/php/8.4/fpm/pool.d/www.conf && \
+    sed -ri -e "s;^error_log = .*;error_log = /var/log/php-fpm.log;" /etc/php/8.4/fpm/php-fpm.conf
+
+RUN phpenmod -v php8.4 -s ALL opcache-recommended && phpenmod -v php8.4 -s ALL mbstring
+
+RUN ln -s /usr/sbin/php-fpm8.4 /usr/sbin/php-fpm
